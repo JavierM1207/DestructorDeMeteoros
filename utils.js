@@ -1,0 +1,3 @@
+    function hexToRgb(hex) { const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : {r:0, g:0, b:0}; }
+    function checkAabbCircleCollision(aabb,circle) { const closestX = Math.max(aabb.x, Math.min(circle.x, aabb.x+aabb.width)); const closestY = Math.max(aabb.y, Math.min(circle.y, aabb.y+aabb.height)); const distanceX = circle.x - closestX; const distanceY = circle.y - closestY; return (distanceX * distanceX + distanceY * distanceY) <= (circle.radius * circle.radius); }
+export { hexToRgb, checkAabbCircleCollision };

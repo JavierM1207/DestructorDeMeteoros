@@ -1,3 +1,7 @@
+import { initAudio, playSound, synth } from "./audio.js";
+import { hexToRgb, checkAabbCircleCollision } from "./utils.js";
+import * as Entities from "./entities.js";
+import { showMessage, hideMessage, updateScoreDisplay, updateLivesDisplay, updateComboDisplay, updateActivePowerUpDisplay, updateBoostBar, activateBoost, registerUIEvents } from "./ui.js";
 
 
 const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
@@ -35,7 +39,6 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
     let comboCount = 0; let difficultyMultiplier = 1;
     const superBulletColors = ['#B19CD9'];
     const powerUpVisuals = { biggerBullets: { itemColor: '#22c55e', borderColor: '#a7f3d0', bulletColor: '#22c55e', displayName: "Balas Grandes" }, shield: { itemColor: '#0ea5e9', borderColor: '#bae6fd', bulletColor: null, displayName: "Escudo" }, laser: { itemColor: '#ef4444', borderColor: '#fca5a5', bulletColor: '#ef4444', displayName: "Rayo Láser" }, multishot: { itemColor: '#FFA500', borderColor: '#fed8b1', bulletColor: '#FFA500', displayName: "Multidisparo" }, shockwave: { itemColor: '#C0C0C0', borderColor: '#FFFFFF', bulletColor: null, displayName: "Onda Expansiva" }, super: { itemColor: '#FFD700', borderColor: '#FFFACD', bulletColor: null, displayName: "SUPER PODER"} };
-    let synth, explosionSynth, gameOverSynth, hitSynth, powerUpSynth, metallicHitSynth, superPowerSynth, shieldBreakSynth; let laserShootSynth, shockwaveSynth, superPowerPickupSynth, boostSynth;
     let cometSpawnTimer = 0; const cometSpawnIntervalMin = 25 * 60; const cometSpawnIntervalMax = 40 * 60; let nextCometSpawnTime = cometSpawnIntervalMin + Math.random() * (cometSpawnIntervalMax - cometSpawnIntervalMin);
     let lifeSpawnTimer = 0; const lifeSpawnInterval = 300;
     const MAX_BG_PARTICLES = 45; const BG_PARTICLE_SPAWN_INTERVAL = 3; let framesSinceLastBgParticle = 0;
@@ -140,41 +143,6 @@ function triggerMissionFlash(missionId) {
 }
     function getDifficultyFactor() { const baseDifficultyIncrease = 0.30; const scoreThreshold = 200; const maxFactor = 5.0; let factor = 1 + (Math.floor(score / scoreThreshold) * baseDifficultyIncrease); return Math.min(factor, maxFactor); }
 
-async function initAudio() {
-    try {
-        if (typeof Tone === 'undefined') {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = 'https://cdn.jsdelivr.net/npm/tone@14.8.39/build/Tone.min.js';
-                s.onload = resolve;
-                s.onerror = reject;
-                document.head.appendChild(s);
-            });
-        }
-        if (Tone.context.state === 'suspended') await Tone.start();
-        if (synth) return;
-        synth = new Tone.Synth({ oscillator:{type:'triangle'}, envelope:{attack:0.01,decay:0.1,sustain:0.05,release:0.1} }).toDestination();
-        explosionSynth = new Tone.NoiseSynth({ noise:{type:'white'}, envelope:{attack:0.005,decay:0.1,sustain:0,release:0.1} }).toDestination();
-        hitSynth = new Tone.MembraneSynth({ pitchDecay:0.02, octaves:5, oscillator:{type:'sine'}, envelope:{attack:0.001,decay:0.2,sustain:0.01,release:0.2} }).toDestination();
-        gameOverSynth = new Tone.Synth({ oscillator:{type:'sawtooth'}, envelope:{attack:0.1,decay:0.5,sustain:0.1,release:0.5} }).toDestination();
-        powerUpSynth = new Tone.Synth({ oscillator:{type:'sine'}, envelope:{attack:0.01,decay:0.2,sustain:0.1,release:0.3} }).toDestination();
-        metallicHitSynth = new Tone.MetalSynth({ frequency: 100, envelope: { attack: 0.001, decay: 0.1, release: 0.05 }, harmonicity: 3.1, modulationIndex: 16, resonance: 2000, octaves: 0.5 }).toDestination();
-        metallicHitSynth.volume.value = -10;
-        superPowerSynth = new Tone.Synth({ oscillator: { type: 'fatsawtooth', count: 3, spread: 30 }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.2, release: 0.2 }, volume: -15 }).toDestination();
-        shieldBreakSynth = new Tone.NoiseSynth({ noise: { type: 'pink' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0, release: 0.2 }, volume: -8 }).toDestination();
-        const shieldBreakFilter = new Tone.Filter(1500, 'highpass').connect(shieldBreakSynth.output);
-        shieldBreakSynth.connect(shieldBreakFilter);
-        laserShootSynth = new Tone.Synth({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.001, decay: 0.03, sustain: 0.001, release: 0.05 }, volume: -15 }).toDestination();
-        shockwaveSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.5 }, volume: -8 }).toDestination();
-        superPowerPickupSynth = new Tone.Synth({ oscillator:{type:'square'}, envelope:{attack:0.01,decay:0.4,sustain:0.01,release:0.4}, volume: -5 }).toDestination();
-        boostSynth = new Tone.Synth({ oscillator: { type: 'pwm', modulationFrequency: 0.2 }, envelope: { attack: 0.02, decay: 0.3, sustain: 0.1, release: 0.4 }, volume: -10 }).toDestination();
-    } catch (e) {
-        console.error('Error initializing Tone.js synths:', e);
-        muted = true;
-        if (muteText) muteText.textContent = 'Sonido ERR';
-    }
-}
-    function updateDimensions() { const cont = document.querySelector('.container'); let w = cont.clientWidth; const maxWStyle = getComputedStyle(cont).maxWidth; if (maxWStyle && maxWStyle !== 'none') { const maxW = parseInt(maxWStyle,10); if (w > maxW) w = maxW; } const aspectRatio = 3/4; let h = w / aspectRatio; const reservedSpace = 120 + 20 + 20; const maxHViewport = window.innerHeight - reservedSpace; if (h > maxHViewport) { h = maxHViewport; w = h * aspectRatio; } if (w < 200) { w = 200; h = w / aspectRatio; } dimensions = { width: w, height: h }; canvas.width = w; canvas.height = h; if (ship) { ship.size = Math.max(30, dimensions.width * 0.08); if (!isMouseControlsActive) { ship.x = (dimensions.width - ship.size) / 2; ship.y = dimensions.height - ship.size - 10; } else { ship.x = Math.min(Math.max(0, ship.x), dimensions.width - ship.size); ship.y = Math.min(Math.max(0, ship.y), dimensions.height - ship.size); } } }
     if (typeof ResizeObserver !== 'undefined') { new ResizeObserver(updateDimensions).observe(document.querySelector('.container')); } else { window.addEventListener('resize', updateDimensions); }
 
     class Ship {
@@ -380,111 +348,6 @@ function playSound(type) {
     function deactivateAllOffensivePowers(resetLevels = true) { biggerBulletsActive = false; laserActive = false; lasers = []; shockwaveActive = false; if(resetLevels && ship){ multishotActive = false; ship.multishotLevel = 1; ship.laserLevel = 1; } currentOffensivePowerType = multishotActive && !resetLevels ? 'multishot' : null; }
     function startPowerUpSpawner() { if (powerUpIntervalId) clearInterval(powerUpIntervalId); setTimeout(spawnPowerUp, 12000); powerUpIntervalId = setInterval(spawnPowerUp, 20000 + Math.random() * 8000); } function stopPowerUpSpawner() { if (powerUpIntervalId) clearInterval(powerUpIntervalId); }
     function checkAabbCircleCollision(aabb,circle) { const closestX = Math.max(aabb.x, Math.min(circle.x, aabb.x+aabb.width)); const closestY = Math.max(aabb.y, Math.min(circle.y, aabb.y+aabb.height)); const distanceX = circle.x - closestX; const distanceY = circle.y - closestY; return (distanceX * distanceX + distanceY * distanceY) <= (circle.radius * circle.radius); }
-function showMessage(txt, dur = 1000) {
-  messageEl.textContent = txt;
-  messageEl.classList.add('visible');
-  const displayDuration = Math.min(dur, 1000);
-  setTimeout(() => messageEl.classList.remove('visible'), displayDuration);
-}
-function hideMessage() {
-  messageEl.classList.remove('visible');
-}
-function updateScoreDisplay() {
-  scoreEl.textContent = score;
-  updateMissionProgress('score', 0);
-  if (missionStats.noPowerUpsUsedThisGame) {
-    updateMissionProgress('scoreWithoutPowerups', 0);
-  }
-}
-function updateLivesDisplay() {
-  livesEl.textContent = `${ship ? ship.lives : 0} ❤️`;
-}
-    function updateComboDisplay() {
-        if (!comboDisplayEl) return;
-        if (comboCount > 1 && gameRunning && !paused) {
-            comboDisplayEl.textContent = ;
-            comboDisplayEl.classList.add('visible', 'combo-flash');
-            comboDisplayEl.addEventListener('animationend', () => { comboDisplayEl.classList.remove('combo-flash'); }, { once: true });
-            if (comboDisplayTimeoutId) clearTimeout(comboDisplayTimeoutId);
-            comboDisplayTimeoutId = setTimeout(() => {
-                comboDisplayEl.classList.remove('visible');
-                comboDisplayTimeoutId = null;
-            }, 1000);
-        } else {
-            comboDisplayEl.classList.remove('visible');
-            if (comboDisplayTimeoutId) {
-                clearTimeout(comboDisplayTimeoutId);
-                comboDisplayTimeoutId = null;
-            }
-        }
-    }x`; comboDisplayEl.classList.add('visible'); if (comboDisplayTimeoutId) clearTimeout(comboDisplayTimeoutId); comboDisplayTimeoutId = setTimeout(() => { comboDisplayEl.classList.remove('visible'); comboDisplayTimeoutId = null; }, 1000); } else { comboDisplayEl.classList.remove('visible'); if (comboDisplayTimeoutId) { clearTimeout(comboDisplayTimeoutId); comboDisplayTimeoutId = null; } } } }
-    function updateActivePowerUpDisplay() { if (!activePowerUpDisplayEl || !ship) return; let textToShow = null; let shouldBeVisible = false; if (superPowerActive) { textToShow = `SUPER! ${Math.ceil(superPowerTimer/60)}s`; shouldBeVisible = true; } else if (currentOffensivePowerType && currentOffensivePowerType !== 'super') { textToShow = powerUpVisuals[currentOffensivePowerType].displayName; if (currentOffensivePowerType === 'multishot') textToShow += ` N${ship.multishotLevel}`; if (currentOffensivePowerType === 'laser') textToShow += ` N${ship.laserLevel}`; shouldBeVisible = true; } else if (shieldActive) { textToShow = `Escudo N${ship.shieldLevel}`; shouldBeVisible = true; } if (shouldBeVisible) { activePowerUpDisplayEl.innerHTML = textToShow; activePowerUpDisplayEl.classList.add('visible'); if (activePowerUpDisplayTimeoutId) clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = setTimeout(() => { activePowerUpDisplayEl.classList.remove('visible'); activePowerUpDisplayTimeoutId = null; }, 1000); } else { activePowerUpDisplayEl.classList.remove('visible'); if (activePowerUpDisplayTimeoutId) { clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = null; } } }
-    function updateBoostBar(){ if(!boostBarFill || !boostBarContainer) return; const fillPercent = Math.min(100, (boostMeteorKills / boostTargetKills) * 100); boostBarFill.style.height = `${fillPercent}%`; if(boostReady){ boostBarContainer.classList.add('ready'); } else { boostBarContainer.classList.remove('ready'); } }
-    function activateBoost() { if(!boostReady || boostActive || !ship) return; boostActive = true; boostTimer = boostDuration; boostReady = false; boostMeteorKills = 0; ship.invincible = true; ship.invincibilityTimer = boostDuration; targetBackgroundSpeedMultiplier = 25; playSound('boost'); updateBoostBar(); showMessage("¡VELOCIDAD MÁXIMA!", 2000); deactivateAllOffensivePowers(true); superPowerActive = true; superPowerTimer = boostDuration; currentOffensivePowerType = 'super'; playSound('superPowerActivate'); }
-
-    function resetGame() { score=0; bullets=[]; meteors=[]; powerUps=[]; explosions=[]; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; floatingTexts = []; thrusterParticles = []; updateScoreDisplay(); ship=new Ship(); if (isMouseControlsActive && ship) { mousePos.x = ship.x + ship.size / 2; mousePos.y = ship.y + ship.size / 2; } updateLivesDisplay(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostMeteorKills = 0; boostReady = false; boostActive = false; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; comboCount = 0; updateComboDisplay(); updateActivePowerUpDisplay(); updateBoostBar(); stopPowerUpSpawner(); cometSpawnTimer = 0; nextCometSpawnTime = cometSpawnIntervalMin + Math.random() * (cometSpawnIntervalMax - cometSpawnIntervalMin); lifeSpawnTimer = 0; resetMissionStats(); missionStats.gameStartTime = Date.now(); for (let i = 0; i < MAX_BG_PARTICLES / 2; i++) { backgroundParticlesLayer1.push(new BackgroundParticle(1)); backgroundParticlesLayer2.push(new BackgroundParticle(2)); } overMsg.classList.remove('visible'); container.classList.remove('game-over-shake'); messageEl.classList.add('visible'); scoreEl.classList.remove('hidden'); livesEl.classList.remove('hidden'); comboDisplayEl.classList.remove('hidden'); activePowerUpDisplayEl.classList.remove('hidden'); pauseBtn.classList.remove('hidden'); startBtn.classList.add('hidden'); difficultySelector.disabled = true; if (!isMouseControlsActive && ('ontouchstart' in window||navigator.maxTouchPoints)) { if(mobileControlsContainer) mobileControlsContainer.style.display = 'flex'; } else { if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; } paused=false; pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`; gameFrameCounter = 0; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; highScore = localStorage.getItem('highScore') || 0; }
-    function startGame() { difficultyMultiplier = parseFloat(difficultySelector.value); initAudio().then(()=>{ if (!gameRunning) { gameRunning=true; resetGame(); } paused=false; gameRunning=true; showMessage("¡Prepárate!",1500); let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } gameLoop(); }).catch(err=>{ console.error("Audio initialization failed, starting game without sound.", err); muted = true; if (typeof Tone !== "undefined") Tone.Master.mute = true; if (muteText) muteText.textContent = "Sonido OFF"; if (!gameRunning) { gameRunning=true; resetGame(); } paused=false; gameRunning=true; showMessage("¡Prepárate! (Audio Error)",1500); let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } gameLoop(); }); }
-    function pauseGame() { if (!gameRunning) return; paused = !paused; if (paused) { showMessage("Juego Pausado"); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/play.svg" alt="[Icono de Reanudar]"/> <span>Reanudar</span>`; if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } } else { hideMessage(); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`; let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (!gameFrameId) gameLoop(); } }
-    function toggleMute() { initAudio().then(() => { muted = !muted; Tone.Master.mute = muted; muteIcon.src = muted ? "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-x.svg" : "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-2.svg"; muteText.textContent = muted ? "Sonido OFF" : "Sonido ON"; if (!muted && ship) playSound('shoot'); }).catch(err => { console.error("Failed to toggle mute (audio init issue):", err); showMessage("Error de audio. Intenta recargar.",2000); }); }
-    function gameOver() { gameRunning=false; paused=true; playSound('gameOver'); if (score > highScore) { highScore = score; localStorage.setItem('highScore', highScore); } highScoreEl.textContent = highScore; finalEl.textContent = score; overMsg.classList.add('visible'); scoreEl.classList.add('hidden'); livesEl.classList.add('hidden'); comboDisplayEl.classList.add('hidden'); activePowerUpDisplayEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); startBtn.classList.remove('hidden'); difficultySelector.disabled = false; startBtn.querySelector('span').textContent = "Reintentar"; if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; container.classList.add('game-over-shake'); setTimeout(()=>container.classList.remove('game-over-shake'),1000); if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } hideMessage(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostActive = false; boostTimer = 0; if(ship) ship.speed = originalShipSpeed; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
-
-    function updateGame() {
-      if (!ship || paused || !gameRunning) return;
-      gameFrameCounter++;
-
-      if (!isMouseControlsActive) {
-          if (!joystickActive) {
-              ship.targetVelX = 0; ship.targetVelY = 0;
-              if (keys['ArrowLeft'] || keys['KeyA']) ship.targetVelX = -ship.speed;
-              if (keys['ArrowRight'] || keys['KeyD']) ship.targetVelX = ship.speed;
-              if (keys['ArrowUp'] || keys['KeyW']) ship.targetVelY = -ship.speed;
-              if (keys['ArrowDown'] || keys['KeyS']) ship.targetVelY = ship.speed;
-          }
-      }
-
-      ship.update(); trySpawnComet(); checkSurvivalMissions(Date.now());
-      backgroundParticleSpeedMultiplier += (targetBackgroundSpeedMultiplier - backgroundParticleSpeedMultiplier) * backgroundSpeedEasing;
-      framesSinceLastBgParticle++; if (framesSinceLastBgParticle >= BG_PARTICLE_SPAWN_INTERVAL) { if (backgroundParticlesLayer1.length + backgroundParticlesLayer2.length < MAX_BG_PARTICLES) { Math.random() < 0.6 ? backgroundParticlesLayer1.push(new BackgroundParticle(1)) : backgroundParticlesLayer2.push(new BackgroundParticle(2));} framesSinceLastBgParticle = 0; }
-      backgroundParticlesLayer1.forEach(p => p.update()); backgroundParticlesLayer2.forEach(p => p.update());
-      bullets.forEach(b=>b.update()); bullets = bullets.filter(b => b.x + b.width > 0 && b.x < dimensions.width && b.y + b.height > 0 && b.y < dimensions.height);
-      meteors.forEach(m=>m.update()); meteors = meteors.filter(m=>m.y < dimensions.height + m.radius && m.x > -m.radius && m.x < dimensions.width + m.radius);
-      comets.forEach((comet, index) => { comet.update(); if (comet.isOffScreen()) { comets.splice(index, 1); } });
-      powerUps.forEach(p=>p.update()); powerUps = powerUps.filter(p=>p.y<dimensions.height+p.radius);
-      lifePowerUps.forEach(lp=>lp.update()); lifePowerUps = lifePowerUps.filter(lp=>lp.y<dimensions.height+lp.radius);
-      explosions.forEach(e=>e.update()); explosions = explosions.filter(e=>!e.isFinished());
-      shieldBreakParticles.forEach(sbp => sbp.update()); shieldBreakParticles = shieldBreakParticles.filter(sbp => !sbp.isFinished());
-      debrisParticles.forEach(dp => dp.update()); debrisParticles = debrisParticles.filter(dp => !dp.isFinished());
-      lasers.forEach(l=>l.update()); lasers = lasers.filter(l=>l.life>0);
-      shockwaves.forEach(sw=>sw.update()); shockwaves = shockwaves.filter(sw=>!sw.isFinished());
-      floatingTexts.forEach(ft=>ft.update()); floatingTexts = floatingTexts.filter(ft=>!ft.isFinished());
-      thrusterParticles.forEach(tp => tp.update()); thrusterParticles = thrusterParticles.filter(tp => !tp.isFinished());
-      updateComboDisplay(); updateActivePowerUpDisplay();
-
-      if (isGiantCometScheduled && gameFrameCounter >= giantCometSpawnFrame) { if(giantCometParams){ comets.push(new Comet(giantCometParams.x, giantCometParams.y, giantCometParams.sizeCategory, giantCometParams.speedX, giantCometParams.speedY, 'giant')); } isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
-
-      for (let k = lasers.length - 1; k >= 0; k--) { const l = lasers[k]; if (!l) continue; for (let i = meteors.length - 1; i >= 0; i--) { const m = meteors[i]; if (!m) continue; const meteorRelX = m.x - l.x; const meteorRelY = m.y - l.shipTopY; const rotation = -l.angle - (Math.PI / 2); const rotatedMeteorX = meteorRelX * Math.cos(rotation) - meteorRelY * Math.sin(rotation); const rotatedMeteorY = meteorRelX * Math.sin(rotation) + meteorRelY * Math.cos(rotation); if (Math.abs(rotatedMeteorX) < (l.maxWidth / 2 + m.radius) && rotatedMeteorY > -l.shipTopY - m.radius && rotatedMeteorY < 0 + m.radius) { playSound('explosion'); explosions.push(new Explosion(m.x,m.y,{r:255,g:0,b:0})); let points = m.type === 'metallic' ? 30 : 10; if(boostActive) points *= 2; score += points * (1 + comboCount * 0.1); comboCount++; floatingTexts.push(new FloatingText(`+${Math.round(points * (1 + (comboCount-1) * 0.1))}`, m.x, m.y, '#FF8C00')); meteors.splice(i,1); updateMissionProgress('laserKills', 1); if(!boostReady) boostMeteorKills++; updateBoostBar(); updateScoreDisplay(); break; } } }
-      for (let i=meteors.length-1; i>=0; i--) { for (let j=shockwaves.length-1; j>=0; j--) { const m=meteors[i], sw=shockwaves[j]; if(!m || !sw) continue; const distSq = (m.x - sw.x)**2 + (m.y - sw.y)**2; if(distSq < (sw.radius + m.radius)**2) { playSound('explosion'); explosions.push(new Explosion(m.x,m.y,{r:200,g:200,b:255})); let points = m.type === 'metallic' ? 30 : 10; if(boostActive) points *= 2; score += points * (1 + comboCount * 0.1); comboCount++; floatingTexts.push(new FloatingText(`+${Math.round(points * (1 + (comboCount-1) * 0.1))}`, m.x, m.y, '#ADD8E6')); meteors.splice(i,1); updateMissionProgress('meteorsDestroyed', 1); if(!boostReady) boostMeteorKills++; updateBoostBar(); updateScoreDisplay(); break; } } }
-
-
-      for (let i=bullets.length-1; i>=0; i--) {
-        let bulletConsumed = false; const b=bullets[i]; if (!b) continue;
-        for (let j=meteors.length-1; j>=0; j--) { const m=meteors[j]; if(!m) continue; const aabb={x:b.x - b.width/2, y:b.y - b.height/2, width:b.width, height:b.height}; const circ={x:m.x,y:m.y,radius:m.radius}; if (checkAabbCircleCollision(aabb,circ)) { bullets.splice(i,1); bulletConsumed = true; if (m.takeHit(b)) { playSound('explosion'); explosions.push(new Explosion(m.x,m.y, m.type === 'metallic' ? {r:150,g:150,b:200} : {r:255,g:100,b:0})); let points = m.type === 'metallic' ? 30 : 10; if(boostActive) points *= 2; score += points * (1 + comboCount * 0.1); comboCount++; floatingTexts.push(new FloatingText(`+${Math.round(points * (1 + (comboCount-1) * 0.1))}`, m.x, m.y, '#FFFF99')); meteors.splice(j,1); updateMissionProgress('meteorsDestroyed', 1); if(!boostReady) boostMeteorKills++; updateBoostBar(); updateScoreDisplay(); } break; } }
-        if (bulletConsumed) continue;
-        for (let k = comets.length - 1; k >= 0; k--) { const c = comets[k]; if(!c) continue; const aabbBullet = { x: b.x - b.width / 2, y: b.y - b.height / 2, width: b.width, height: b.height }; const circleComet = { x: c.x, y: c.y, radius: c.approxRadius }; if (checkAabbCircleCollision(aabbBullet, circleComet)) { if(b.type === 'super') { bullets.splice(i, 1); bulletConsumed = true; if (c.takeHit(b)) { playSound('explosion'); (c.type === 'giant') ? c.explodeSpectacularly() : explosions.push(new Explosion(c.x, c.y, { r: 255, g: 255, b: 100 })); comets.splice(k, 1); score += c.points; updateMissionProgress('cometsDestroyed_any', 1); updateScoreDisplay(); } break; } else if (c.type !== 'giant') { bullets.splice(i,1); bulletConsumed = true; playSound('metallicHit'); break; } } }
-      }
-
-      for (let i=meteors.length-1; i>=0; i--) { const m=meteors[i]; if(!m) continue; const shipAABB={x:ship.x,y:ship.y,width:ship.size,height:ship.size}; const meteorCircle={x:m.x,y:m.y,radius:m.radius}; if (checkAabbCircleCollision(shipAABB,meteorCircle)) { ship.hit(); explosions.push(new Explosion(m.x,m.y,{r:200,g:50,b:50})); meteors.splice(i,1); if (ship.lives <= 0 && gameRunning) gameOver(); } }
-      for (let k = comets.length - 1; k >= 0; k--) { const c = comets[k]; if(!c) continue; const shipAABB = { x: ship.x, y: ship.y, width: ship.size, height: ship.size }; const cometCircle = { x: c.x, y: c.y, radius: c.approxRadius }; if (checkAabbCircleCollision(shipAABB, cometCircle)) { if (c.type === 'giant') { if (superPowerActive) { c.explodeSpectacularly(); comets.splice(k, 1); playSound('explosion'); } else { explosions.push(new Explosion(c.x, c.y, { r: 255, g: 0, b: 0 })); comets.splice(k, 1); if (ship) ship.loseAllLives(); } } else if (superPowerActive) { superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; showMessage("¡Super Poder Perdido por Cometa!", 2000); playSound('hit'); comets.splice(k, 1); explosions.push(new Explosion(c.x, c.y, { r: 255, g: 120, b: 0 })); } else { explosions.push(new Explosion(c.x, c.y, { r: 255, g: 0, b: 0 })); comets.splice(k, 1); if (ship) ship.loseAllLives(); } break; } }
-
-      for (let i=powerUps.length-1; i>=0; i--) { const p=powerUps[i]; if(!p) continue; const shipAABB={x:ship.x,y:ship.y,width:ship.size,height:ship.size}; const powerUpCircle={x:p.x,y:p.y,radius:p.radius}; if (checkAabbCircleCollision(shipAABB,powerUpCircle)) {
-          playSound('powerup'); missionStats.noPowerUpsUsedThisGame = false;
-          const collectedType = p.type;
-
-          if (collectedType === 'super') { // This case should no longer be reachable if 'super' is removed from spawn
-              deactivateAllOffensivePowers(true);
-              superPowerActive = true; superPowerTimer = superPowerDuration; currentOffensivePowerType = 'super';
-              showMessage("¡¡SUPER PODER!!", 2500); playSound('superPowerActivate');
-          } else if (collectedType === 'shield') {
               shieldActive = true; ship.shieldLevel = Math.min(3, ship.shieldLevel + 1);
               showMessage(`${powerUpVisuals[collectedType].displayName} Nivel ${ship.shieldLevel}!`, 2000);
           } else {
@@ -536,15 +399,6 @@ function updateLivesDisplay() {
     function handleJoystickMove(event) { event.preventDefault(); if (!joystickActive || !gameRunning || paused || !ship) return; const touch = event.touches[0]; updateJoystick(touch.clientX, touch.clientY); }
     function handleJoystickEnd(event) { event.preventDefault(); if (!joystickActive || !ship) return; joystickActive = false; joystickHandle.style.transform = `translate(-50%, -50%)`; ship.targetVelX = 0; ship.targetVelY = 0; }
     function updateJoystick(touchX, touchY) { if(!ship) return; const deltaX = touchX - joystickStartX; const deltaY = touchY - joystickStartY; let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); const angle = Math.atan2(deltaY, deltaX); let handleX = deltaX; let handleY = deltaY; if (distance > joystickAreaRadius - joystickHandleRadius) { handleX = Math.cos(angle) * (joystickAreaRadius - joystickHandleRadius); handleY = Math.sin(angle) * (joystickAreaRadius - joystickHandleRadius); distance = joystickAreaRadius - joystickHandleRadius; } joystickHandle.style.transform = `translate(calc(-50% + ${handleX}px), calc(-50% + ${handleY}px))`; if (distance > joystickDeadZone) { const normalizedDistance = (distance - joystickDeadZone) / (joystickAreaRadius - joystickHandleRadius - joystickDeadZone); const currentSpeed = ship.speed * normalizedDistance; ship.targetVelX = Math.cos(angle) * currentSpeed; ship.targetVelY = Math.sin(angle) * currentSpeed; } else { ship.targetVelX = 0; ship.targetVelY = 0; } }
-
-    if(startBtn) startBtn.addEventListener('click', startGame); if(pauseBtn) pauseBtn.addEventListener('click', pauseGame); if(muteBtn) muteBtn.addEventListener('click', toggleMute); if(newBtn) newBtn.addEventListener('click', startGame);
-    if(missionsButton) { missionsButton.addEventListener('click', () => { missionsModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
-    if(closeMissionsModalBtn) { closeMissionsModalBtn.addEventListener('click', () => { missionsModal.style.display = 'none'; }); }
-    if(menuButton) { menuButton.addEventListener('click', () => { menuModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
-    if(closeMenuModalBtn) { closeMenuModalBtn.addEventListener('click', () => { menuModal.style.display = 'none'; }); }
-    window.addEventListener('click', (event) => { if (event.target == missionsModal) { missionsModal.style.display = 'none'; } if (event.target == menuModal) { menuModal.style.display = 'none'; }});
-    if(boostBarContainer){ boostBarContainer.addEventListener('click', activateBoost); boostBarContainer.addEventListener('touchstart', (e)=>{ e.preventDefault(); activateBoost(); }); }
-
     window.onload = function(){
       updateDimensions(); showMessage("¡Presiona Empezar!");
       isMouseControlsActive = !('ontouchstart' in window || navigator.maxTouchPoints > 0);
