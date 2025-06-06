@@ -382,7 +382,9 @@ function playSound(type) {
     function checkAabbCircleCollision(aabb,circle) { const closestX = Math.max(aabb.x, Math.min(circle.x, aabb.x+aabb.width)); const closestY = Math.max(aabb.y, Math.min(circle.y, aabb.y+aabb.height)); const distanceX = circle.x - closestX; const distanceY = circle.y - closestY; return (distanceX * distanceX + distanceY * distanceY) <= (circle.radius * circle.radius); }
 function showMessage(txt, dur = 1000) {
   messageEl.textContent = txt;
-  messageEl.classList.add('visible');
+  messageEl.classList.remove('float-up');
+  void messageEl.offsetWidth;
+  messageEl.classList.add('visible', 'float-up');
   const displayDuration = Math.min(dur, 1000);
   setTimeout(() => messageEl.classList.remove('visible'), displayDuration);
 }
@@ -403,7 +405,9 @@ function updateComboDisplay() {
     if (!comboDisplayEl) return;
     if (comboCount > 1 && gameRunning && !paused) {
         comboDisplayEl.textContent = `Combo: ${comboCount}x`;
-        comboDisplayEl.classList.add('visible', 'combo-flash');
+        comboDisplayEl.classList.remove('float-up');
+        void comboDisplayEl.offsetWidth;
+        comboDisplayEl.classList.add('visible', 'combo-flash', 'float-up');
         comboDisplayEl.addEventListener('animationend', () => {
             comboDisplayEl.classList.remove('combo-flash');
         }, { once: true });
@@ -420,7 +424,7 @@ function updateComboDisplay() {
         }
     }
 }
-    function updateActivePowerUpDisplay() { if (!activePowerUpDisplayEl || !ship) return; let textToShow = null; let shouldBeVisible = false; if (superPowerActive) { textToShow = `SUPER! ${Math.ceil(superPowerTimer/60)}s`; shouldBeVisible = true; } else if (currentOffensivePowerType && currentOffensivePowerType !== 'super') { textToShow = powerUpVisuals[currentOffensivePowerType].displayName; if (currentOffensivePowerType === 'multishot') textToShow += ` N${ship.multishotLevel}`; if (currentOffensivePowerType === 'laser') textToShow += ` N${ship.laserLevel}`; shouldBeVisible = true; } else if (shieldActive) { textToShow = `Escudo N${ship.shieldLevel}`; shouldBeVisible = true; } if (shouldBeVisible) { activePowerUpDisplayEl.innerHTML = textToShow; activePowerUpDisplayEl.classList.add('visible'); if (activePowerUpDisplayTimeoutId) clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = setTimeout(() => { activePowerUpDisplayEl.classList.remove('visible'); activePowerUpDisplayTimeoutId = null; }, 1000); } else { activePowerUpDisplayEl.classList.remove('visible'); if (activePowerUpDisplayTimeoutId) { clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = null; } } }
+    function updateActivePowerUpDisplay() { if (!activePowerUpDisplayEl || !ship) return; let textToShow = null; let shouldBeVisible = false; if (superPowerActive) { textToShow = `SUPER! ${Math.ceil(superPowerTimer/60)}s`; shouldBeVisible = true; } else if (currentOffensivePowerType && currentOffensivePowerType !== 'super') { textToShow = powerUpVisuals[currentOffensivePowerType].displayName; if (currentOffensivePowerType === 'multishot') textToShow += ` N${ship.multishotLevel}`; if (currentOffensivePowerType === 'laser') textToShow += ` N${ship.laserLevel}`; shouldBeVisible = true; } else if (shieldActive) { textToShow = `Escudo N${ship.shieldLevel}`; shouldBeVisible = true; } if (shouldBeVisible) { activePowerUpDisplayEl.innerHTML = textToShow; activePowerUpDisplayEl.classList.remove('float-up'); void activePowerUpDisplayEl.offsetWidth; activePowerUpDisplayEl.classList.add('visible','float-up'); if (activePowerUpDisplayTimeoutId) clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = setTimeout(() => { activePowerUpDisplayEl.classList.remove('visible'); activePowerUpDisplayTimeoutId = null; }, 1000); } else { activePowerUpDisplayEl.classList.remove('visible'); if (activePowerUpDisplayTimeoutId) { clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = null; } } }
     function updateBoostBar(){ if(!boostBarFill || !boostBarContainer) return; const fillPercent = Math.min(100, (boostMeteorKills / boostTargetKills) * 100); boostBarFill.style.height = `${fillPercent}%`; if(boostReady){ boostBarContainer.classList.add('ready'); } else { boostBarContainer.classList.remove('ready'); } }
     function activateBoost() { if(!boostReady || boostActive || !ship) return; boostActive = true; boostTimer = boostDuration; boostReady = false; boostMeteorKills = 0; ship.invincible = true; ship.invincibilityTimer = boostDuration; targetBackgroundSpeedMultiplier = 25; playSound('boost'); updateBoostBar(); showMessage("¡VELOCIDAD MÁXIMA!", 2000); deactivateAllOffensivePowers(true); superPowerActive = true; superPowerTimer = boostDuration; currentOffensivePowerType = 'super'; playSound('superPowerActivate'); }
 
