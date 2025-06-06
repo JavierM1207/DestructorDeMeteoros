@@ -32,7 +32,7 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
     let superPowerActive = false, superPowerTimer = 0; const superPowerDuration = 10 * 60;
     let boostMeteorKills = 0; const boostTargetKills = 70; let boostReady = false; let boostActive = false; let boostTimer = 0; const boostDuration = 10 * 60; let originalShipSpeed = 7;
     let backgroundParticleSpeedMultiplier = 1; let targetBackgroundSpeedMultiplier = 1; const backgroundSpeedEasing = 0.05;
-    let comboCount = 0; let difficultyMultiplier = 1;
+    let comboCount = 0; let difficultyMultiplier = parseFloat(difficultySelector.value);
     const superBulletColors = ['#B19CD9'];
     const powerUpVisuals = { biggerBullets: { itemColor: '#22c55e', borderColor: '#a7f3d0', bulletColor: '#22c55e', displayName: "Balas Grandes" }, shield: { itemColor: '#0ea5e9', borderColor: '#bae6fd', bulletColor: null, displayName: "Escudo" }, laser: { itemColor: '#ef4444', borderColor: '#fca5a5', bulletColor: '#ef4444', displayName: "Rayo Láser" }, multishot: { itemColor: '#FFA500', borderColor: '#fed8b1', bulletColor: '#FFA500', displayName: "Multidisparo" }, shockwave: { itemColor: '#C0C0C0', borderColor: '#FFFFFF', bulletColor: null, displayName: "Onda Expansiva" }, super: { itemColor: '#FFD700', borderColor: '#FFFACD', bulletColor: null, displayName: "SUPER PODER"} };
     let synth, explosionSynth, gameOverSynth, hitSynth, powerUpSynth, metallicHitSynth, superPowerSynth, shieldBreakSynth; let laserShootSynth, shockwaveSynth, superPowerPickupSynth, boostSynth;
@@ -424,8 +424,138 @@ function updateComboDisplay() {
     function updateBoostBar(){ if(!boostBarFill || !boostBarContainer) return; const fillPercent = Math.min(100, (boostMeteorKills / boostTargetKills) * 100); boostBarFill.style.height = `${fillPercent}%`; if(boostReady){ boostBarContainer.classList.add('ready'); } else { boostBarContainer.classList.remove('ready'); } }
     function activateBoost() { if(!boostReady || boostActive || !ship) return; boostActive = true; boostTimer = boostDuration; boostReady = false; boostMeteorKills = 0; ship.invincible = true; ship.invincibilityTimer = boostDuration; targetBackgroundSpeedMultiplier = 25; playSound('boost'); updateBoostBar(); showMessage("¡VELOCIDAD MÁXIMA!", 2000); deactivateAllOffensivePowers(true); superPowerActive = true; superPowerTimer = boostDuration; currentOffensivePowerType = 'super'; playSound('superPowerActivate'); }
 
-    function resetGame() { score=0; bullets=[]; meteors=[]; powerUps=[]; explosions=[]; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; floatingTexts = []; thrusterParticles = []; updateScoreDisplay(); ship=new Ship(); if (isMouseControlsActive && ship) { mousePos.x = ship.x + ship.size / 2; mousePos.y = ship.y + ship.size / 2; } updateLivesDisplay(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostMeteorKills = 0; boostReady = false; boostActive = false; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; comboCount = 0; updateComboDisplay(); updateActivePowerUpDisplay(); updateBoostBar(); stopPowerUpSpawner(); cometSpawnTimer = 0; nextCometSpawnTime = cometSpawnIntervalMin + Math.random() * (cometSpawnIntervalMax - cometSpawnIntervalMin); lifeSpawnTimer = 0; resetMissionStats(); missionStats.gameStartTime = Date.now(); for (let i = 0; i < MAX_BG_PARTICLES / 2; i++) { backgroundParticlesLayer1.push(new BackgroundParticle(1)); backgroundParticlesLayer2.push(new BackgroundParticle(2)); } overMsg.classList.remove('visible'); container.classList.remove('game-over-shake'); messageEl.classList.add('visible'); scoreEl.classList.remove('hidden'); livesEl.classList.remove('hidden'); comboDisplayEl.classList.remove('hidden'); activePowerUpDisplayEl.classList.remove('hidden'); pauseBtn.classList.remove('hidden'); startBtn.classList.add('hidden'); difficultySelector.disabled = true; if (!isMouseControlsActive && ('ontouchstart' in window||navigator.maxTouchPoints)) { if(mobileControlsContainer) mobileControlsContainer.style.display = 'flex'; } else { if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; } paused=false; pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`; gameFrameCounter = 0; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; highScore = localStorage.getItem('highScore') || 0; }
-    function startGame() { difficultyMultiplier = parseFloat(difficultySelector.value); initAudio().then(()=>{ if (!gameRunning) { gameRunning=true; resetGame(); } paused=false; gameRunning=true; showMessage("¡Prepárate!",1500); let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } gameLoop(); }).catch(err=>{ console.error("Audio initialization failed, starting game without sound.", err); muted = true; if (typeof Tone !== "undefined") Tone.Master.mute = true; if (muteText) muteText.textContent = "Sonido OFF"; if (!gameRunning) { gameRunning=true; resetGame(); } paused=false; gameRunning=true; showMessage("¡Prepárate! (Audio Error)",1500); let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } gameLoop(); }); }
+    function resetGame() {
+        score = 0;
+        bullets = [];
+        meteors = [];
+        powerUps = [];
+        explosions = [];
+        lasers = [];
+        comets = [];
+        shieldBreakParticles = [];
+        backgroundParticlesLayer1 = [];
+        backgroundParticlesLayer2 = [];
+        debrisParticles = [];
+        lifePowerUps = [];
+        shockwaves = [];
+        floatingTexts = [];
+        thrusterParticles = [];
+        updateScoreDisplay();
+        ship = new Ship();
+        if (isMouseControlsActive && ship) {
+            mousePos.x = ship.x + ship.size / 2;
+            mousePos.y = ship.y + ship.size / 2;
+        }
+        updateLivesDisplay();
+        deactivateAllOffensivePowers(true);
+        if (shieldActive) {
+            shieldActive = false;
+            ship.shieldLevel = 0;
+        }
+        superPowerActive = false;
+        superPowerTimer = 0;
+        currentOffensivePowerType = null;
+        multishotActive = false;
+        multishotLevel = 1;
+        shockwaveActive = false;
+        laserActive = false;
+        ship.laserLevel = 1;
+        boostMeteorKills = 0;
+        boostReady = false;
+        boostActive = false;
+        backgroundParticleSpeedMultiplier = 1;
+        targetBackgroundSpeedMultiplier = 1;
+        comboCount = 0;
+        updateComboDisplay();
+        updateActivePowerUpDisplay();
+        updateBoostBar();
+        stopPowerUpSpawner();
+        cometSpawnTimer = 0;
+        nextCometSpawnTime =
+            cometSpawnIntervalMin + Math.random() * (cometSpawnIntervalMax - cometSpawnIntervalMin);
+        lifeSpawnTimer = 0;
+        resetMissionStats();
+        missionStats.gameStartTime = Date.now();
+        for (let i = 0; i < MAX_BG_PARTICLES / 2; i++) {
+            backgroundParticlesLayer1.push(new BackgroundParticle(1));
+            backgroundParticlesLayer2.push(new BackgroundParticle(2));
+        }
+        overMsg.classList.remove('visible');
+        container.classList.remove('game-over-shake');
+        messageEl.classList.add('visible');
+        scoreEl.classList.remove('hidden');
+        livesEl.classList.remove('hidden');
+        comboDisplayEl.classList.remove('hidden');
+        activePowerUpDisplayEl.classList.remove('hidden');
+        pauseBtn.classList.remove('hidden');
+        startBtn.classList.add('hidden');
+        difficultySelector.disabled = true;
+        if (!isMouseControlsActive && ('ontouchstart' in window || navigator.maxTouchPoints)) {
+            if (mobileControlsContainer) mobileControlsContainer.style.display = 'flex';
+        } else {
+            if (mobileControlsContainer) mobileControlsContainer.style.display = 'none';
+        }
+        paused = false;
+        pauseBtn.innerHTML =
+            `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`;
+        gameFrameCounter = 0;
+        isGiantCometScheduled = false;
+        giantCometSpawnFrame = -1;
+        giantCometParams = null;
+        highScore = localStorage.getItem('highScore') || 0;
+    }
+    function startGame() {
+        initAudio()
+            .then(() => {
+                if (!gameRunning) {
+                    gameRunning = true;
+                    resetGame();
+                }
+                paused = false;
+                gameRunning = true;
+                showMessage("¡Prepárate!", 1500);
+                let meteorIntervalBase = 1500;
+                if (meteorIntervalId) clearInterval(meteorIntervalId);
+                meteorIntervalId = setInterval(
+                    spawnMeteor,
+                    (meteorIntervalBase / difficultyMultiplier) - Math.min(1200, score / 1.5)
+                );
+                startPowerUpSpawner();
+                if (gameFrameId) {
+                    cancelAnimationFrame(gameFrameId);
+                    gameFrameId = null;
+                }
+                gameLoop();
+            })
+            .catch(err => {
+                console.error(
+                    "Audio initialization failed, starting game without sound.",
+                    err
+                );
+                muted = true;
+                if (typeof Tone !== "undefined") Tone.Master.mute = true;
+                if (muteText) muteText.textContent = "Sonido OFF";
+                if (!gameRunning) {
+                    gameRunning = true;
+                    resetGame();
+                }
+                paused = false;
+                gameRunning = true;
+                showMessage("¡Prepárate! (Audio Error)", 1500);
+                let meteorIntervalBase = 1500;
+                if (meteorIntervalId) clearInterval(meteorIntervalId);
+                meteorIntervalId = setInterval(
+                    spawnMeteor,
+                    (meteorIntervalBase / difficultyMultiplier) - Math.min(1200, score / 1.5)
+                );
+                startPowerUpSpawner();
+                if (gameFrameId) {
+                    cancelAnimationFrame(gameFrameId);
+                    gameFrameId = null;
+                }
+                gameLoop();
+            });
+    }
     function pauseGame() { if (!gameRunning) return; paused = !paused; if (paused) { showMessage("Juego Pausado"); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/play.svg" alt="[Icono de Reanudar]"/> <span>Reanudar</span>`; if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } } else { hideMessage(); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`; let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (!gameFrameId) gameLoop(); } }
     function toggleMute() { initAudio().then(() => { muted = !muted; Tone.Master.mute = muted; muteIcon.src = muted ? "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-x.svg" : "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-2.svg"; muteText.textContent = muted ? "Sonido OFF" : "Sonido ON"; if (!muted && ship) playSound('shoot'); }).catch(err => { console.error("Failed to toggle mute (audio init issue):", err); showMessage("Error de audio. Intenta recargar.",2000); }); }
     function gameOver() { gameRunning=false; paused=true; playSound('gameOver'); if (score > highScore) { highScore = score; localStorage.setItem('highScore', highScore); } highScoreEl.textContent = highScore; finalEl.textContent = score; overMsg.classList.add('visible'); scoreEl.classList.add('hidden'); livesEl.classList.add('hidden'); comboDisplayEl.classList.add('hidden'); activePowerUpDisplayEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); startBtn.classList.remove('hidden'); difficultySelector.disabled = false; startBtn.querySelector('span').textContent = "Reintentar"; if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; container.classList.add('game-over-shake'); setTimeout(()=>container.classList.remove('game-over-shake'),1000); if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } hideMessage(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostActive = false; boostTimer = 0; if(ship) ship.speed = originalShipSpeed; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
@@ -539,7 +669,15 @@ function updateComboDisplay() {
     function handleJoystickEnd(event) { event.preventDefault(); if (!joystickActive || !ship) return; joystickActive = false; joystickHandle.style.transform = `translate(-50%, -50%)`; ship.targetVelX = 0; ship.targetVelY = 0; }
     function updateJoystick(touchX, touchY) { if(!ship) return; const deltaX = touchX - joystickStartX; const deltaY = touchY - joystickStartY; let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY); const angle = Math.atan2(deltaY, deltaX); let handleX = deltaX; let handleY = deltaY; if (distance > joystickAreaRadius - joystickHandleRadius) { handleX = Math.cos(angle) * (joystickAreaRadius - joystickHandleRadius); handleY = Math.sin(angle) * (joystickAreaRadius - joystickHandleRadius); distance = joystickAreaRadius - joystickHandleRadius; } joystickHandle.style.transform = `translate(calc(-50% + ${handleX}px), calc(-50% + ${handleY}px))`; if (distance > joystickDeadZone) { const normalizedDistance = (distance - joystickDeadZone) / (joystickAreaRadius - joystickHandleRadius - joystickDeadZone); const currentSpeed = ship.speed * normalizedDistance; ship.targetVelX = Math.cos(angle) * currentSpeed; ship.targetVelY = Math.sin(angle) * currentSpeed; } else { ship.targetVelX = 0; ship.targetVelY = 0; } }
 
-    if(startBtn) startBtn.addEventListener('click', startGame); if(pauseBtn) pauseBtn.addEventListener('click', pauseGame); if(muteBtn) muteBtn.addEventListener('click', toggleMute); if(newBtn) newBtn.addEventListener('click', startGame);
+    if(startBtn) startBtn.addEventListener('click', startGame);
+    if(pauseBtn) pauseBtn.addEventListener('click', pauseGame);
+    if(muteBtn) muteBtn.addEventListener('click', toggleMute);
+    if(newBtn) newBtn.addEventListener('click', startGame);
+    if(difficultySelector) {
+        difficultySelector.addEventListener('change', (e) => {
+            difficultyMultiplier = parseFloat(e.target.value);
+        });
+    }
     if(missionsButton) { missionsButton.addEventListener('click', () => { missionsModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
     if(closeMissionsModalBtn) { closeMissionsModalBtn.addEventListener('click', () => { missionsModal.style.display = 'none'; }); }
     if(menuButton) { menuButton.addEventListener('click', () => { menuModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
