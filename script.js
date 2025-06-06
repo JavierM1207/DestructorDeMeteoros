@@ -292,8 +292,21 @@ async function initAudio() {
 
             this.speedX = speedX * this.baseSpeedFactor; this.speedY = speedY * this.baseSpeedFactor;
             this.currentHits = 0;
-            this.vertices = []; const vCount = Math.floor(Math.random() * 4) + (this.type === 'giant' ? 11 : 9); let maxDist = 0;
-            for (let i = 0; i < vCount; i++) { const angle = (i / vCount) * Math.PI * 2; const r = this.baseRadius * (0.7 + Math.random() * 0.6); const vx = Math.cos(angle) * r; const vy = Math.sin(angle) * r; this.vertices.push({ x: vx, y: vy }); maxDist = Math.max(maxDist, Math.sqrt(vx*vx + vy*vy)); }
+            this.vertices = [];
+            const vCount = Math.floor(Math.random() * 4) + (this.type === 'giant' ? 13 : 9);
+            let maxDist = 0;
+            const variation = this.type === 'giant' ? 0.2 : 0.6;
+            const minFactor = this.type === 'giant' ? 0.9 : 0.7;
+            const ellipseX = this.type === 'giant' ? (1 + (Math.random() - 0.5) * 0.5) : 1;
+            const ellipseY = this.type === 'giant' ? (1 + (Math.random() - 0.5) * 0.5) : 1;
+            for (let i = 0; i < vCount; i++) {
+                const angle = (i / vCount) * Math.PI * 2;
+                const r = this.baseRadius * (minFactor + Math.random() * variation);
+                const vx = Math.cos(angle) * r * ellipseX;
+                const vy = Math.sin(angle) * r * ellipseY;
+                this.vertices.push({ x: vx, y: vy });
+                maxDist = Math.max(maxDist, Math.sqrt(vx * vx + vy * vy));
+            }
             this.approxRadius = maxDist; this.rotation = Math.atan2(this.speedY, this.speedX) + Math.PI / 2; this.rotationSpeed = (Math.random() - 0.5) * 0.02;
             this.framesSinceLastDebris = 0;
         }
