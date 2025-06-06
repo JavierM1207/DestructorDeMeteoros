@@ -1,8 +1,39 @@
 body { margin: 0; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; min-height: 100vh; background-color: #111; font-family: 'Press Start 2P', cursive; overflow: hidden; padding-top: 10px; padding-left: 10px; padding-right: 10px; padding-bottom: 10px; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; }
     .container { position: relative; text-align: center; width: 100%; max-width: 600px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
     #gameCanvas { background: radial-gradient(circle, #000046, #000000); border: 2px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); border-radius: 16px; width: 100%; height: auto; max-height: calc(100vh - 150px); aspect-ratio: 3/4; display: block; margin: 0 auto; cursor: crosshair; position: relative; }
-    .controls-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; margin-bottom: 10px; width: 100%; max-width: 600px; }
-    #startButton, #pauseButton, #muteButton, #missionsButton, #menuButton { padding: 8px 12px; font-size: 0.8rem; cursor: pointer; background: linear-gradient(135deg, #4361ee 0%, #80ed99 100%); color: #fff; border: none; border-radius: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15); transition: all 0.2s ease-in-out; display: inline-flex; align-items: center; justify-content: center; min-width: 100px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); font-family: 'Press Start 2P', cursive; }
+.controls-row {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 20px);
+  max-width: 600px;
+  padding: 0 10px;
+  box-sizing: border-box;
+}
+#startButton, #pauseButton, #muteButton, #missionsButton, #menuButton {
+  flex: 1 1 auto;
+  min-width: 80px;
+  padding: clamp(0.4rem, 1.5vw, 0.7rem) clamp(0.6rem, 2vw, 1rem);
+  font-size: clamp(0.7rem, 2vw, 1rem);
+  cursor: pointer;
+  background: linear-gradient(135deg, #4361ee 0%, #80ed99 100%);
+  color: #fff;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+  font-family: "Press Start 2P", cursive;
+}
+
     #missionsButton { background: linear-gradient(135deg, #f59e0b 0%, #fcd34d 100%); }
     #menuButton { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); }
     #missionsButton:hover { background: linear-gradient(135deg, #fbbf24 0%, #fde047 100%); }
@@ -60,3 +91,9 @@ body { margin: 0; display: flex; flex-direction: column; justify-content: flex-s
     #difficultySelectorContainer { margin-bottom: 10px; }
     #difficultySelector { padding: 8px; font-family: 'Press Start 2P', cursive; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 5px; }
     .menu-modal-item { margin-bottom: 15px; display: flex; justify-content: center; }
+@media (max-width: 600px) {
+  .controls-row {
+    bottom: 140px;
+  }
+}
+
