@@ -180,6 +180,12 @@ button {
     padding: 0.8rem 1.2rem;
   }
 
+  /* Prevent buttons from shifting position when tapped on mobile */
+  #startButton:active,
+  #pauseButton:active {
+    transform: none;
+  }
+
   #message {
     top: 70px;
   }
