@@ -7,6 +7,7 @@ body {
   min-height: 100vh;
   background-color: #111;
   font-family: 'Press Start 2P', 'Orbitron', cursive;
+  font-size: clamp(0.9rem, 1vw, 1rem);
   overflow: hidden;
   padding: 10px;
   box-sizing: border-box;
@@ -144,7 +145,7 @@ button {
     .modal-content { background-color: #1a1a2e; color: #e0e7ff; margin: 5% auto; padding: 20px; border: 1px solid #f59e0b; border-radius: 10px; width: 90%; max-width: 700px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); font-family: 'Press Start 2P', cursive; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f59e0b; padding-bottom: 10px; margin-bottom: 15px; }
     .modal-header h2 { margin: 0; font-size: 1.5rem; color: #fcd34d; }
-    .close-button { color: #fcd34d; font-size: 28px; font-weight: bold; background: none; border: none; cursor: pointer; }
+    .close-button { color: #fcd34d; font-size: 1.75rem; font-weight: bold; background: none; border: none; cursor: pointer; }
     .close-button:hover, .close-button:focus { color: #f59e0b; text-decoration: none; }
     #missionsList { list-style: none; padding: 0; max-height: 60vh; overflow-y: auto; }
     #missionsList li { background-color: #2a2a4e; border: 1px solid #4a4a7e; border-radius: 5px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
