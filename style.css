@@ -179,6 +179,10 @@ button {
     padding: 0.8rem 1.2rem;
   }
 
+  #message {
+    top: 70px;
+  }
+
   #mobileControlsContainer {
     height: 140px;
   }
