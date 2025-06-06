@@ -37,7 +37,6 @@ body {
 #startButton,
 #pauseButton,
 #muteButton,
-#missionsButton,
 #menuButton {
   flex: 0 0 auto;
   min-width: 80px;
@@ -77,15 +76,12 @@ button {
   outline: none;
 }
 
-    #missionsButton { background: linear-gradient(135deg, #f59e0b 0%, #fcd34d 100%); }
     #menuButton { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); }
-    #missionsButton:hover, #menuButton:hover,
     #startButton:hover, #pauseButton:hover, #muteButton:hover {
       background: linear-gradient(135deg, #4895ef 0%, #a7f9a7 100%);
       box-shadow: 0 8px 15px rgba(46, 229, 157, 0.3);
       transform: translateY(-2px);
     }
-    #startButton:active, #pauseButton:active, #muteButton:active, #menuButton:active, #missionsButton:active {
       transform: translateY(1px);
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
@@ -93,7 +89,6 @@ button {
     #newGameButton:hover { background: linear-gradient(135deg, #fca5a5 0%, #fde047 100%); box-shadow: 0px 15px 20px rgba(252, 211, 77, 0.4); transform: translateY(-3px); }
     #newGameButton:active { transform: translateY(1px); box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); }
     button img { width: 1.1rem; height: 1.1rem; margin-right: 0.4rem; pointer-events: none; }
-    #missionsButton img { margin-right: 0.3rem; }
     .touch-controls-grid { display: none; }
     #mobileControlsContainer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 120px; padding: 10px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 150; pointer-events: none; }
     #joystick-area { width: 100px; height: 100px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; position: relative; border: 2px solid rgba(255, 255, 255, 0.3); pointer-events: auto; display: flex; justify-content: center; align-items: center; }
@@ -147,15 +142,6 @@ button {
     .modal-header h2 { margin: 0; font-size: 1.5rem; color: #fcd34d; }
     .close-button { color: #fcd34d; font-size: 1.75rem; font-weight: bold; background: none; border: none; cursor: pointer; }
     .close-button:hover, .close-button:focus { color: #f59e0b; text-decoration: none; }
-    #missionsList { list-style: none; padding: 0; max-height: 60vh; overflow-y: auto; }
-    #missionsList li { background-color: #2a2a4e; border: 1px solid #4a4a7e; border-radius: 5px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
-    #missionsList li .mission-details { flex-grow: 1; }
-    #missionsList li .mission-name { font-weight: bold; color: #f5af19; display: block; margin-bottom: 4px; }
-    #missionsList li .mission-description { color: #c7d2fe; font-size: 0.7rem; margin-bottom: 4px; }
-    #missionsList li .mission-progress { font-size: 0.65rem; color: #8a98ca; }
-    #missionsList li .mission-status { font-weight: bold; padding: 5px 8px; border-radius: 5px; min-width: 80px; text-align: center; }
-    #missionsList li .mission-status.pending { background-color: #dc2626; color: #fef2f2; }
-    #missionsList li .mission-status.completed { background-color: #16a34a; color: #f0fdf4; }
 
     #boostBarContainer { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); width: 20px; height: 100px; background-color: rgba(0, 0, 0, 0.65); border: 1.5px solid #3b82f6; border-radius: 5px; overflow: hidden; z-index: 10; pointer-events: none; }
     #boostBarFill { width: 100%; height: 0%; background-color: #60a5fa; position: absolute; bottom: 0; left: 0; transition: height 0.2s ease-out; }
@@ -172,7 +158,6 @@ button {
   #startButton,
   #pauseButton,
   #muteButton,
-  #missionsButton,
   #menuButton {
     font-size: 0.9rem;
     padding: 0.8rem 1.2rem;
@@ -219,7 +204,6 @@ button {
   animation: flashScale 0.4s ease-in-out;
 }
 
-.mission-flash {
   animation: flashScale 0.6s ease-in-out;
   background-color: rgba(34, 197, 94, 0.2);
 }

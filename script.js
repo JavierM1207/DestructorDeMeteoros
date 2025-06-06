@@ -9,8 +9,6 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
     const container = document.querySelector('.container');
     const mobileControlsContainer = document.getElementById('mobileControlsContainer'); const joystickArea = document.getElementById('joystick-area');
     const joystickHandle = document.getElementById('joystick-handle'); const mobileShootButton = document.getElementById('mobile-shoot-button');
-    const missionsButton = document.getElementById('missionsButton'); const missionsModal = document.getElementById('missionsModal');
-    const closeMissionsModalBtn = document.getElementById('closeMissionsModal'); const missionsListEl = document.getElementById('missionsList');
     const boostBarContainer = document.getElementById('boostBarContainer'); const boostBarFill = document.getElementById('boostBarFill');
     const comboDisplayEl = document.getElementById('comboDisplay'); const activePowerUpDisplayEl = document.getElementById('activePowerUpDisplay');
     const menuButton = document.getElementById('menuButton');
@@ -40,105 +38,8 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
     let cometSpawnTimer = 0; const cometSpawnIntervalMin = 25 * 60; const cometSpawnIntervalMax = 40 * 60; let nextCometSpawnTime = cometSpawnIntervalMin + Math.random() * (cometSpawnIntervalMax - cometSpawnIntervalMin);
     let lifeSpawnTimer = 0; const lifeSpawnInterval = 300;
     const MAX_BG_PARTICLES = 45; const BG_PARTICLE_SPAWN_INTERVAL = 3; let framesSinceLastBgParticle = 0;
-    let missions = [ { id: 'score_novice', name: 'Novato Espacial', description: 'Alcanza 500 puntos.', category: 'Puntuación', targetValue: 500, currentValue: 0, isCompleted: false, statToTrack: 'score' }, { id: 'score_expert', name: 'Piloto Experto', description: 'Alcanza 2000 puntos.', category: 'Puntuación', targetValue: 2000, currentValue: 0, isCompleted: false, statToTrack: 'score' }, { id: 'survival_extreme', name: 'Resistencia Extrema', description: 'Sobrevive 1 minuto sin perder vidas.', category: 'Sobrevivencia', targetValue: 1 * 60, currentValue: 0, isCompleted: false, statToTrack: 'timeSurvivedWithoutHits' }, { id: 'power_laser_master', name: 'Maestro del Láser', description: 'Elimina 5 meteoritos con el rayo láser.', category: 'Poderes', targetValue: 5, currentValue: 0, isCompleted: false, statToTrack: 'laserKills' }, { id: 'enemy_exterminator', name: 'Exterminador de Meteoritos', description: 'Destruye 20 meteoritos.', category: 'Enemigos', targetValue: 20, currentValue: 0, isCompleted: false, statToTrack: 'meteorsDestroyed' }, { id: 'enemy_comet_hunter', name: 'Cazador de Cometas', description: 'Destruye 1 cometa (cualquier tamaño).', category: 'Enemigos', targetValue: 1, currentValue: 0, isCompleted: false, statToTrack: 'cometsDestroyed_any' }, { id: 'cumulative_collector', name: 'Coleccionista de Poderes', description: 'Activa cada tipo de power-up normal una vez.', category: 'Acumulativas', targetValue: 4, currentValue: 0, isCompleted: false, statToTrack: 'uniquePowerUpsCollected' }, { id: 'special_no_powerups', name: 'Sin Power-ups', description: 'Alcanza 200 puntos sin activar ningún power-up.', category: 'Especiales', targetValue: 200, currentValue: 0, isCompleted: false, statToTrack: 'scoreWithoutPowerups' } ];
-    let missionStats = {};
     let gameFrameCounter = 0; let isGiantCometScheduled = false; let giantCometSpawnFrame = -1; let giantCometParams = null;
     let comboDisplayTimeoutId = null; let activePowerUpDisplayTimeoutId = null;
-
-    function resetMissionStats() { missionStats = { score: 0, timeSurvivedWithoutHits: 0, timeSurvivedTotal: 0, laserKills: 0, meteorsDestroyed: 0, metallicMeteorsDestroyed: 0, cometsDestroyed_any: 0, cometsDestroyed_small: 0, cometsDestroyed_medium: 0, cometsDestroyed_large: 0, uniquePowerUpsCollected: new Set(), powerUpsActivated: { biggerBullets: 0, shield: 0, laser: 0, multishot: 0, super: 0, shockwave: 0 }, superPowerKills: 0, biggerBulletKills: 0, shipHits: 0, noPowerUpsUsedThisGame: true, }; missions.forEach(mission => { mission.isCompleted = false; mission.currentValue = 0; if (mission.statToTrack === 'uniquePowerUpsCollected') { mission.currentValue = new Set(); } }); }
-function updateMissionProgress(statKey, value) {
-    if (missionStats.hasOwnProperty(statKey)) {
-        if (typeof missionStats[statKey] === 'number') {
-            if (statKey === 'score' || statKey === 'scoreWithoutPowerups') {
-                missionStats[statKey] = score;
-            } else {
-                missionStats[statKey] += value;
-            }
-        } else if (missionStats[statKey] instanceof Set) {
-            missionStats[statKey].add(value);
-        }
-        if (typeof missionStats[statKey] === 'object' && !(missionStats[statKey] instanceof Set) && missionStats[statKey].hasOwnProperty(value)) {
-            missionStats[statKey][value]++;
-        }
-    }
-    missions.forEach(mission => {
-        if (!mission.isCompleted && mission.statToTrack === statKey) {
-            let currentProgressValue = 0;
-            if (statKey === 'uniquePowerUpsCollected') {
-                currentProgressValue = missionStats.uniquePowerUpsCollected.size;
-            } else if (statKey === 'scoreWithoutPowerups') {
-                if (missionStats.noPowerUpsUsedThisGame) {
-                    currentProgressValue = missionStats.score;
-                } else {
-                    return;
-                }
-            } else {
-                currentProgressValue = missionStats[statKey];
-            }
-            mission.currentValue = currentProgressValue;
-            if (mission.currentValue >= mission.targetValue) {
-                if (!mission.isCompleted) {
-                    mission.isCompleted = true;
-                    showMessage(`¡Misión Cumplida: ${mission.name}!`, 3000);
-                    renderMissions();
-                    floatingTexts.push(new FloatingText('¡Misión Completada!', dimensions.width / 2, dimensions.height * 0.25, '#4ade80'));
-                    triggerMissionFlash(mission.id);
-                }
-            }
-        }
-    });
-}
-    function checkSurvivalMissions(currentTime) { if (ship && missionStats.shipHits === 0) { missionStats.timeSurvivedWithoutHits = Math.floor((currentTime - (missionStats.gameStartTime || currentTime)) / 1000); updateMissionProgress('timeSurvivedWithoutHits', 0); } missionStats.timeSurvivedTotal = Math.floor((currentTime - (missionStats.gameStartTime || currentTime)) / 1000); }
-function renderMissions() {
-    missionsListEl.innerHTML = '';
-    missions.forEach(mission => {
-        const li = document.createElement('li');
-        li.dataset.missionId = mission.id;
-        const detailsDiv = document.createElement('div');
-        detailsDiv.className = 'mission-details';
-        const nameSpan = document.createElement('span');
-        nameSpan.className = 'mission-name';
-        nameSpan.textContent = mission.name;
-        detailsDiv.appendChild(nameSpan);
-        const descSpan = document.createElement('span');
-        descSpan.className = 'mission-description';
-        descSpan.textContent = mission.description;
-        detailsDiv.appendChild(descSpan);
-        const progressSpan = document.createElement('span');
-        progressSpan.className = 'mission-progress';
-        let currentDisplayValue = mission.currentValue;
-        if (mission.statToTrack === 'uniquePowerUpsCollected' && mission.currentValue instanceof Set) {
-            currentProgressValue = mission.currentValue.size;
-        } else if (typeof mission.currentValue === 'number') {
-            currentDisplayValue = Math.min(mission.currentValue, mission.targetValue);
-        }
-        progressSpan.textContent = `Progreso: ${currentDisplayValue} / ${mission.targetValue}`;
-        if (mission.isCompleted) {
-            progressSpan.textContent = `Progreso: ${mission.targetValue} / ${mission.targetValue}`;
-        }
-        detailsDiv.appendChild(progressSpan);
-        li.appendChild(detailsDiv);
-        const statusSpan = document.createElement('span');
-        statusSpan.className = 'mission-status';
-        if (mission.isCompleted) {
-            statusSpan.classList.add('completed');
-            statusSpan.textContent = '¡Conseguida!';
-        } else {
-            statusSpan.classList.add('pending');
-            statusSpan.textContent = 'Pendiente';
-        }
-        li.appendChild(statusSpan);
-        missionsListEl.appendChild(li);
-    });
-}
-
-function triggerMissionFlash(missionId) {
-    const li = document.querySelector(`[data-mission-id="${missionId}"]`);
-    if (li) {
-        li.classList.add('mission-flash');
-        li.addEventListener('animationend', () => li.classList.remove('mission-flash'), { once: true });
-    }
-}
     function getDifficultyFactor() {
         const baseDifficultyIncrease = 0.30;
         const scoreThreshold = 200;
@@ -235,7 +136,6 @@ async function initAudio() {
           if (this.invincible && this.invincibilityTimer > 0) { this.invincibilityTimer--; if (this.invincibilityTimer <= 0 && !boostActive) this.invincible = false; }
       }
       shoot() { if (superPowerActive) { const numSuperBullets = 5; const angleIncrement = Math.PI / 6; const baseAngle = -Math.PI / 2; for (let i = 0; i < numSuperBullets; i++) { const angle = baseAngle + (i - Math.floor(numSuperBullets / 2)) * angleIncrement; const speed = 7; const bulletX = this.x + this.size / 2; const bulletY = this.y; const color = superBulletColors[0]; bullets.push(new Bullet(bulletX, bulletY, 8, 8, speed, color, angle, 'super')); } playSound('superPowerShoot'); } else if (laserActive) { const baseAngle = -Math.PI / 2; const angleSpread = 5 * Math.PI / 180; const numLasers = Math.min(5, 1 + (this.laserLevel -1) * 2); for(let i = 0; i < numLasers; i++){ const angleOffset = (i - Math.floor((numLasers-1)/2)) * angleSpread; lasers.push(new LaserBeam(this.x + this.size/2, this.y, laserPulseDuration, baseAngle + angleOffset)); } playSound('laserShoot'); } else if (shockwaveActive) { shockwaves.push(new Shockwave(this.x + this.size / 2, this.y + this.size / 2)); playSound('shockwave'); shockwaveShotsRemaining--; if(shockwaveShotsRemaining<=0){ shockwaveActive=false; currentOffensivePowerType=null; showMessage('¡Onda Expansiva Agotada!',2000); } } else { let shots = multishotActive ? [1, 2, 3, 4, 5][this.multishotLevel -1] : 1; if (bullets.length + shots > (multishotActive ? 12 : 8) ) return; let bulletColor = '#f59e0b'; let bulletType = 'normal'; if (biggerBulletsActive) { bulletColor = powerUpVisuals.biggerBullets.bulletColor; bulletType = 'bigger';} else if (multishotActive) { bulletColor = powerUpVisuals.multishot.bulletColor; } for (let i = 0; i < shots; i++) { const bulletWidth = biggerBulletsActive ? 12 : 5; const bulletHeight = biggerBulletsActive ? 22 : 12; const spacing = bulletWidth * 2.5; const xOffset = (i - (shots - 1) / 2) * spacing; const bulletX = this.x + this.size/2 - bulletWidth/2 + xOffset; const bulletY = this.y - bulletHeight; bullets.push(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, 10, bulletColor, -Math.PI / 2, bulletType)); } playSound('shoot'); } }
-      hit() { if (this.invincible) return; missionStats.shipHits++; comboCount = 0; if (shieldActive) { ship.shieldLevel--; if(ship.shieldLevel <= 0) { shieldActive = false; currentOffensivePowerType = multishotActive ? 'multishot' : (laserActive ? 'laser' : (biggerBulletsActive ? 'biggerBullets' : (shockwaveActive ? 'shockwave' : null))); } playSound('shieldBreak'); shieldBreakParticles.push(new ShieldShards(this.x + this.size/2, this.y + this.size/2, 10, this.size, powerUpVisuals.shield.itemColor)); showMessage("¡Escudo Roto!", 1500); this.invincible = true; this.invincibilityTimer = 60; return; } if (superPowerActive) { return; } deactivateAllOffensivePowers(true); currentOffensivePowerType = null; this.lives--; playSound('hit'); updateLivesDisplay(); if (this.lives <= 0) { gameOver(); } else { this.invincible = true; this.invincibilityTimer = this.invincibilityDuration; } }
       loseAllLives() { this.lives = 0; updateLivesDisplay(); gameOver(); }
     }
 
@@ -414,10 +314,6 @@ function hideMessage() {
 }
 function updateScoreDisplay() {
   scoreEl.textContent = score;
-  updateMissionProgress('score', 0);
-  if (missionStats.noPowerUpsUsedThisGame) {
-    updateMissionProgress('scoreWithoutPowerups', 0);
-  }
 }
 function updateLivesDisplay() {
   livesEl.textContent = `${ship ? ship.lives : 0} ❤️`;
@@ -499,8 +395,6 @@ function updateComboDisplay() {
         nextCometSpawnTime =
             cometSpawnIntervalMin + Math.random() * (cometSpawnIntervalMax - cometSpawnIntervalMin);
         lifeSpawnTimer = 0;
-        resetMissionStats();
-        missionStats.gameStartTime = Date.now();
         for (let i = 0; i < MAX_BG_PARTICLES / 2; i++) {
             backgroundParticlesLayer1.push(new BackgroundParticle(1));
             backgroundParticlesLayer2.push(new BackgroundParticle(2));
@@ -598,7 +492,6 @@ function updateComboDisplay() {
           }
       }
 
-      ship.update(); trySpawnComet(); checkSurvivalMissions(Date.now());
       backgroundParticleSpeedMultiplier += (targetBackgroundSpeedMultiplier - backgroundParticleSpeedMultiplier) * backgroundSpeedEasing;
       framesSinceLastBgParticle++; if (framesSinceLastBgParticle >= BG_PARTICLE_SPAWN_INTERVAL) { if (backgroundParticlesLayer1.length + backgroundParticlesLayer2.length < MAX_BG_PARTICLES) { Math.random() < 0.6 ? backgroundParticlesLayer1.push(new BackgroundParticle(1)) : backgroundParticlesLayer2.push(new BackgroundParticle(2));} framesSinceLastBgParticle = 0; }
       backgroundParticlesLayer1.forEach(p => p.update()); backgroundParticlesLayer2.forEach(p => p.update());
@@ -618,22 +511,17 @@ function updateComboDisplay() {
 
       if (isGiantCometScheduled && gameFrameCounter >= giantCometSpawnFrame) { if(giantCometParams){ comets.push(new Comet(giantCometParams.x, giantCometParams.y, giantCometParams.sizeCategory, giantCometParams.speedX, giantCometParams.speedY, 'giant')); } isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
 
-      for (let k = lasers.length - 1; k >= 0; k--) { const l = lasers[k]; if (!l) continue; for (let i = meteors.length - 1; i >= 0; i--) { const m = meteors[i]; if (!m) continue; const meteorRelX = m.x - l.x; const meteorRelY = m.y - l.shipTopY; const rotation = -l.angle - (Math.PI / 2); const rotatedMeteorX = meteorRelX * Math.cos(rotation) - meteorRelY * Math.sin(rotation); const rotatedMeteorY = meteorRelX * Math.sin(rotation) + meteorRelY * Math.cos(rotation); if (Math.abs(rotatedMeteorX) < (l.maxWidth / 2 + m.radius) && rotatedMeteorY > -l.shipTopY - m.radius && rotatedMeteorY < 0 + m.radius) { playSound('explosion'); explosions.push(new Explosion(m.x,m.y,{r:255,g:0,b:0})); let points = m.type === 'metallic' ? 30 : 10; if(boostActive) points *= 2; score += points * (1 + comboCount * 0.1); comboCount++; floatingTexts.push(new FloatingText(`+${Math.round(points * (1 + (comboCount-1) * 0.1))}`, m.x, m.y, '#FF8C00')); meteors.splice(i,1); updateMissionProgress('laserKills', 1); if(!boostReady) boostMeteorKills++; updateBoostBar(); updateScoreDisplay(); break; } } }
-      for (let i=meteors.length-1; i>=0; i--) { for (let j=shockwaves.length-1; j>=0; j--) { const m=meteors[i], sw=shockwaves[j]; if(!m || !sw) continue; const distSq = (m.x - sw.x)**2 + (m.y - sw.y)**2; if(distSq < (sw.radius + m.radius)**2) { playSound('explosion'); explosions.push(new Explosion(m.x,m.y,{r:200,g:200,b:255})); let points = m.type === 'metallic' ? 30 : 10; if(boostActive) points *= 2; score += points * (1 + comboCount * 0.1); comboCount++; floatingTexts.push(new FloatingText(`+${Math.round(points * (1 + (comboCount-1) * 0.1))}`, m.x, m.y, '#ADD8E6')); meteors.splice(i,1); updateMissionProgress('meteorsDestroyed', 1); if(!boostReady) boostMeteorKills++; updateBoostBar(); updateScoreDisplay(); break; } } }
 
 
       for (let i=bullets.length-1; i>=0; i--) {
         let bulletConsumed = false; const b=bullets[i]; if (!b) continue;
-        for (let j=meteors.length-1; j>=0; j--) { const m=meteors[j]; if(!m) continue; const aabb={x:b.x - b.width/2, y:b.y - b.height/2, width:b.width, height:b.height}; const circ={x:m.x,y:m.y,radius:m.radius}; if (checkAabbCircleCollision(aabb,circ)) { bullets.splice(i,1); bulletConsumed = true; if (m.takeHit(b)) { playSound('explosion'); explosions.push(new Explosion(m.x,m.y, m.type === 'metallic' ? {r:150,g:150,b:200} : {r:255,g:100,b:0})); let points = m.type === 'metallic' ? 30 : 10; if(boostActive) points *= 2; score += points * (1 + comboCount * 0.1); comboCount++; floatingTexts.push(new FloatingText(`+${Math.round(points * (1 + (comboCount-1) * 0.1))}`, m.x, m.y, '#FFFF99')); meteors.splice(j,1); updateMissionProgress('meteorsDestroyed', 1); if(!boostReady) boostMeteorKills++; updateBoostBar(); updateScoreDisplay(); } break; } }
         if (bulletConsumed) continue;
-        for (let k = comets.length - 1; k >= 0; k--) { const c = comets[k]; if(!c) continue; const aabbBullet = { x: b.x - b.width / 2, y: b.y - b.height / 2, width: b.width, height: b.height }; const circleComet = { x: c.x, y: c.y, radius: c.approxRadius }; if (checkAabbCircleCollision(aabbBullet, circleComet)) { if(b.type === 'super') { bullets.splice(i, 1); bulletConsumed = true; if (c.takeHit(b)) { playSound('explosion'); (c.type === 'giant') ? c.explodeSpectacularly() : explosions.push(new Explosion(c.x, c.y, { r: 255, g: 255, b: 100 })); comets.splice(k, 1); score += c.points; updateMissionProgress('cometsDestroyed_any', 1); updateScoreDisplay(); } break; } else if (c.type !== 'giant') { bullets.splice(i,1); bulletConsumed = true; playSound('metallicHit'); break; } } }
       }
 
       for (let i=meteors.length-1; i>=0; i--) { const m=meteors[i]; if(!m) continue; const shipAABB={x:ship.x,y:ship.y,width:ship.size,height:ship.size}; const meteorCircle={x:m.x,y:m.y,radius:m.radius}; if (checkAabbCircleCollision(shipAABB,meteorCircle)) { ship.hit(); explosions.push(new Explosion(m.x,m.y,{r:200,g:50,b:50})); meteors.splice(i,1); if (ship.lives <= 0 && gameRunning) gameOver(); } }
       for (let k = comets.length - 1; k >= 0; k--) { const c = comets[k]; if(!c) continue; const shipAABB = { x: ship.x, y: ship.y, width: ship.size, height: ship.size }; const cometCircle = { x: c.x, y: c.y, radius: c.approxRadius }; if (checkAabbCircleCollision(shipAABB, cometCircle)) { if (c.type === 'giant') { if (superPowerActive) { c.explodeSpectacularly(); comets.splice(k, 1); playSound('explosion'); } else { explosions.push(new Explosion(c.x, c.y, { r: 255, g: 0, b: 0 })); comets.splice(k, 1); if (ship) ship.loseAllLives(); } } else if (superPowerActive) { superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; showMessage("¡Super Poder Perdido por Cometa!", 2000); playSound('hit'); comets.splice(k, 1); explosions.push(new Explosion(c.x, c.y, { r: 255, g: 120, b: 0 })); } else { explosions.push(new Explosion(c.x, c.y, { r: 255, g: 0, b: 0 })); comets.splice(k, 1); if (ship) ship.loseAllLives(); } break; } }
 
       for (let i=powerUps.length-1; i>=0; i--) { const p=powerUps[i]; if(!p) continue; const shipAABB={x:ship.x,y:ship.y,width:ship.size,height:ship.size}; const powerUpCircle={x:p.x,y:p.y,radius:p.radius}; if (checkAabbCircleCollision(shipAABB,powerUpCircle)) {
-          playSound('powerup'); missionStats.noPowerUpsUsedThisGame = false;
           const collectedType = p.type;
 
           if (collectedType === 'super') { // This case should no longer be reachable if 'super' is removed from spawn
@@ -673,7 +561,6 @@ function updateComboDisplay() {
                   showMessage(`¡${powerUpVisuals[collectedType].displayName} Activado!`, 2000);
               }
           }
-          updateMissionProgress('uniquePowerUpsCollected', collectedType);
           powerUps.splice(i,1);
       } }
       for (let i=lifePowerUps.length-1; i>=0; i--) { const lp=lifePowerUps[i]; if(!lp) continue; const shipAABB={x:ship.x,y:ship.y,width:ship.size,height:ship.size}; const lifeCircle={x:lp.x,y:lp.y,radius:lp.radius}; if (checkAabbCircleCollision(shipAABB,lifeCircle)) { if(ship) ship.lives++; updateLivesDisplay(); playSound('lifeUp'); lifePowerUps.splice(i,1); showMessage("¡Vida Extra!", 1500); } }
@@ -688,7 +575,7 @@ function updateComboDisplay() {
 
     document.addEventListener('keydown', e=>{ if (e.code==='Space') { e.preventDefault(); if (!isMouseControlsActive && gameRunning && !paused && ship) { ship.shoot(); } } keys[e.code] = true; if (e.code==='KeyW') keys['ArrowUp']=true; if (e.code==='KeyS') keys['ArrowDown']=true; if (e.code==='KeyA') keys['ArrowLeft']=true; if (e.code==='KeyD') keys['ArrowRight']=true; });
     document.addEventListener('keyup', e=>{ keys[e.code] = false; if (e.code==='KeyW') keys['ArrowUp']=false; if (e.code==='KeyS') keys['ArrowDown']=false; if (e.code==='KeyA') keys['ArrowLeft']=false; if (e.code==='KeyD') keys['ArrowRight']=false; });
-    function handleGlobalClickForShoot(e) { if (!isMouseControlsActive || !gameRunning || paused || !ship) return; const clickedElement = e.target; const isButton = clickedElement.closest('button'); if (isButton) { const gameButtons = [startBtn, pauseBtn, muteBtn, newBtn, missionsButton, closeMissionsModalBtn]; if (gameButtons.some(btn => btn === isButton || (btn && btn.contains(isButton)) )) { return; } } ship.shoot(); }
+    function handleGlobalClickForShoot(e) { if (!isMouseControlsActive || !gameRunning || paused || !ship) return; const clickedElement = e.target; const isButton = clickedElement.closest('button'); if (isButton) { const gameButtons = [startBtn, pauseBtn, muteBtn, newBtn]; if (gameButtons.some(btn => btn === isButton || (btn && btn.contains(isButton)) )) { return; } } ship.shoot(); }
     function handleJoystickStart(event) { event.preventDefault(); if (!gameRunning || paused || !ship) return; joystickActive = true; const touch = event.touches[0]; const joystickRect = joystickArea.getBoundingClientRect(); joystickStartX = joystickRect.left + joystickAreaRadius; joystickStartY = joystickRect.top + joystickAreaRadius; updateJoystick(touch.clientX, touch.clientY); }
     function handleJoystickMove(event) { event.preventDefault(); if (!joystickActive || !gameRunning || paused || !ship) return; const touch = event.touches[0]; updateJoystick(touch.clientX, touch.clientY); }
     function handleJoystickEnd(event) { event.preventDefault(); if (!joystickActive || !ship) return; joystickActive = false; joystickHandle.style.transform = `translate(-50%, -50%)`; ship.targetVelX = 0; ship.targetVelY = 0; }
@@ -698,11 +585,8 @@ function updateComboDisplay() {
     if(pauseBtn) pauseBtn.addEventListener('click', pauseGame);
     if(muteBtn) muteBtn.addEventListener('click', toggleMute);
     if(newBtn) newBtn.addEventListener('click', startGame);
-    if(missionsButton) { missionsButton.addEventListener('click', () => { missionsModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
-    if(closeMissionsModalBtn) { closeMissionsModalBtn.addEventListener('click', () => { missionsModal.style.display = 'none'; }); }
     if(menuButton) { menuButton.addEventListener('click', () => { menuModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
     if(closeMenuModalBtn) { closeMenuModalBtn.addEventListener('click', () => { menuModal.style.display = 'none'; }); }
-    window.addEventListener('click', (event) => { if (event.target == missionsModal) { missionsModal.style.display = 'none'; } if (event.target == menuModal) { menuModal.style.display = 'none'; }});
     if(boostBarContainer){ boostBarContainer.addEventListener('click', activateBoost); boostBarContainer.addEventListener('touchstart', (e)=>{ e.preventDefault(); activateBoost(); }); }
 
     window.onload = function(){
@@ -711,6 +595,5 @@ function updateComboDisplay() {
       if (isMouseControlsActive) { console.log("Controles de Ratón ACTIVADOS"); if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; canvas.addEventListener('mousemove', e => { if (!gameRunning || paused || !ship) return; const rect = canvas.getBoundingClientRect(); mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top; }); document.addEventListener('click', handleGlobalClickForShoot); }
       else { console.log("Controles Táctiles (Joystick) ACTIVADOS"); if(mobileControlsContainer) mobileControlsContainer.style.display = 'flex'; if(joystickArea) { joystickArea.addEventListener('touchstart', handleJoystickStart, { passive: false }); joystickArea.addEventListener('touchmove', handleJoystickMove, { passive: false }); joystickArea.addEventListener('touchend', handleJoystickEnd); joystickArea.addEventListener('touchcancel', handleJoystickEnd); } if(mobileShootButton) { mobileShootButton.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameRunning && !paused && ship) ship.shoot(); }, { passive: false }); } }
       initAudio().catch(err => console.warn("Initial audio setup prompt might be needed or failed:", err));
-      resetMissionStats(); renderMissions(); updateBoostBar();
     };
 });
