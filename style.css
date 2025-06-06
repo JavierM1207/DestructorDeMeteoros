@@ -99,21 +99,21 @@ button {
     #joystick-handle { width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.4); border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.6); position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); transition: transform 0.05s linear; }
     #mobile-shoot-button { width: 80px; height: 80px; background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.3); pointer-events: auto; cursor: pointer; }
     #mobile-shoot-button img { width: 30px; height: 30px; margin: 0; }
-    #message, #gameOverMessage, #comboDisplay, #activePowerUpDisplay { position: absolute; background-color: rgba(0, 0, 0, 0.7); border-radius: 6px; padding: 8px 12px; color: #e0e7ff; font-size: 0.9rem; text-align: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); z-index: 100; max-width: 80%; white-space: pre-wrap; word-wrap: break-word; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,0.3); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s; }
+    #message, #gameOverMessage, #comboDisplay, #activePowerUpDisplay { position: absolute; background-color: rgba(0, 0, 0, 0.75); border-radius: 6px; padding: 8px 12px; color: #f8fafc; font-size: 0.9rem; text-align: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); z-index: 100; max-width: 80%; white-space: pre-wrap; word-wrap: break-word; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,0.3); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s; }
     #message.visible, #gameOverMessage.visible, #comboDisplay.visible, #activePowerUpDisplay.visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
-    #message { top: 45px; left: 50%; transform: translateX(-50%); border: 1px solid #6366f1; }
-    #gameOverMessage { top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid #dc2626; padding: 20px; font-size: 1.3rem; }
+    #message { top: 45px; left: 50%; transform: translateX(-50%); border: 1px solid #818cf8; }
+    #gameOverMessage { top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid #f87171; padding: 20px; font-size: 1.3rem; }
     #gameOverMessage h2 { font-size: 1.8rem; color: #f87171; margin-bottom: 10px; }
     #gameOverMessage p { font-size: 1.1rem; margin-bottom: 15px; }
     #scoreDisplay, #livesDisplay {
       position: absolute;
       top: 15px;
-      background-color: rgba(0, 0, 0, 0.65);
-      border: 1.5px solid #3b82f6;
+      background-color: rgba(0, 0, 0, 0.75);
+      border: 2px solid #4f46e5;
       border-radius: 8px;
       padding: 8px 12px;
-      color: #fff;
-      font-size: 0.85rem;
+      color: #f8fafc;
+      font-size: 1rem;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
       z-index: 10;
@@ -124,15 +124,15 @@ button {
       top: 15px;
       left: 50%;
       transform: translateX(-50%);
-      border: 1.5px solid #f59e0b;
-      color: #fcd34d;
+      border: 2px solid #fbbf24;
+      color: #fde68a;
       text-shadow: 0 0 6px rgba(252, 211, 77, 0.8);
       max-width: calc(100% - 140px);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    #activePowerUpDisplay { top: 45px; right: 15px; border: 1.5px solid #a78bfa; color: #d8b4fe; }
+    #activePowerUpDisplay { top: 45px; right: 15px; border: 2px solid #c4b5fd; color: #e9d5ff; }
     #activePowerUpDisplay img { width: 1.2em; height: 1.2em; vertical-align: middle; margin-right: 5px;}
 
     .hidden { opacity: 0 !important; visibility: hidden !important; transition: opacity 0.3s ease, visibility 0s 0.3s !important; }
@@ -195,6 +195,13 @@ button {
   #mobile-shoot-button img {
     width: 35px;
     height: 35px;
+  }
+
+  #scoreDisplay,
+  #livesDisplay,
+  #comboDisplay,
+  #activePowerUpDisplay {
+    font-size: 0.9rem;
   }
 }
 
