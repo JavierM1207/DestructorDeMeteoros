@@ -161,8 +161,6 @@ button {
     #boostBarFill { width: 100%; height: 0%; background-color: #60a5fa; position: absolute; bottom: 0; left: 0; transition: height 0.2s ease-out; }
     #boostBarContainer.ready { pointer-events: auto; cursor: pointer; border: 3px solid #a5f3fc; animation: boostGlow 0.5s infinite alternate; }
     @keyframes boostGlow { from { box-shadow: 0 0 10px #67e8f9, 0 0 15px #67e8f9, 0 0 20px #a5f3fc; } to { box-shadow: 0 0 20px #a5f3fc, 0 0 30px #a5f3fc, 0 0 40px #22d3ee; } }
-    #difficultySelectorContainer { margin-bottom: 10px; }
-    #difficultySelector { padding: 8px; font-family: 'Press Start 2P', cursive; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 5px; }
     .menu-modal-item { margin-bottom: 15px; display: flex; justify-content: center; }
 @media (max-width: 600px) {
   .controls-row {
