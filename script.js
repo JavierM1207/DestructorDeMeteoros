@@ -1,5 +1,6 @@
 
 
+document.addEventListener('DOMContentLoaded', function() {
 const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
     const startBtn = document.getElementById('startButton'); const pauseBtn = document.getElementById('pauseButton'); const muteBtn = document.getElementById('muteButton');
     const muteIcon = document.getElementById('muteIcon'); const muteText = document.getElementById('muteText'); const messageEl = document.getElementById('message');
@@ -699,3 +700,4 @@ function updateComboDisplay() {
       initAudio().catch(err => console.warn("Initial audio setup prompt might be needed or failed:", err));
       resetMissionStats(); renderMissions(); updateBoostBar();
     };
+});
