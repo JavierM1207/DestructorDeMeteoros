@@ -1,0 +1,62 @@
+body { margin: 0; display: flex; flex-direction: column; justify-content: flex-start; align-items: center; min-height: 100vh; background-color: #111; font-family: 'Press Start 2P', cursive; overflow: hidden; padding-top: 10px; padding-left: 10px; padding-right: 10px; padding-bottom: 10px; box-sizing: border-box; user-select: none; -webkit-user-select: none; -ms-user-select: none; -moz-user-select: none; }
+    .container { position: relative; text-align: center; width: 100%; max-width: 600px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; }
+    #gameCanvas { background: radial-gradient(circle, #000046, #000000); border: 2px solid #3b82f6; box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); border-radius: 16px; width: 100%; height: auto; max-height: calc(100vh - 150px); aspect-ratio: 3/4; display: block; margin: 0 auto; cursor: crosshair; position: relative; }
+    .controls-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin-top: 10px; margin-bottom: 10px; width: 100%; max-width: 600px; }
+    #startButton, #pauseButton, #muteButton, #missionsButton, #menuButton { padding: 8px 12px; font-size: 0.8rem; cursor: pointer; background: linear-gradient(135deg, #4361ee 0%, #80ed99 100%); color: #fff; border: none; border-radius: 15px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.15); transition: all 0.2s ease-in-out; display: inline-flex; align-items: center; justify-content: center; min-width: 100px; text-shadow: 1px 1px 2px rgba(0,0,0,0.4); font-family: 'Press Start 2P', cursive; }
+    #missionsButton { background: linear-gradient(135deg, #f59e0b 0%, #fcd34d 100%); }
+    #menuButton { background: linear-gradient(135deg, #64748b 0%, #94a3b8 100%); }
+    #missionsButton:hover { background: linear-gradient(135deg, #fbbf24 0%, #fde047 100%); }
+    #menuButton:hover { background: linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%); }
+    #startButton:hover, #pauseButton:hover, #muteButton:hover { background: linear-gradient(135deg, #4895ef 0%, #a7f9a7 100%); box-shadow: 0px 8px 15px rgba(46, 229, 157, 0.3); transform: translateY(-2px); }
+    #startButton:active, #pauseButton:active, #muteButton:active, #menuButton:active { transform: translateY(1px); box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2); }
+    #newGameButton { margin-top: 15px; padding: 12px 25px; font-size: 1.1rem; cursor: pointer; background: linear-gradient(135deg, #f87171 0%, #fcd34d 100%); color: #fff; border: none; border-radius: 25px; box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3); transition: all 0.3s ease 0s; display: inline-flex; align-items: center; justify-content: center; width: auto; min-width: 160px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-family: 'Press Start 2P', cursive; }
+    #newGameButton:hover { background: linear-gradient(135deg, #fca5a5 0%, #fde047 100%); box-shadow: 0px 15px 20px rgba(252, 211, 77, 0.4); transform: translateY(-3px); }
+    #newGameButton:active { transform: translateY(1px); box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2); }
+    button img { width: 1.1rem; height: 1.1rem; margin-right: 0.4rem; }
+    #missionsButton img { margin-right: 0.3rem; }
+    .touch-controls-grid { display: none; }
+    #mobileControlsContainer { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 120px; padding: 10px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; z-index: 150; pointer-events: none; }
+    #joystick-area { width: 100px; height: 100px; background-color: rgba(255, 255, 255, 0.15); border-radius: 50%; position: relative; border: 2px solid rgba(255, 255, 255, 0.3); pointer-events: auto; display: flex; justify-content: center; align-items: center; }
+    #joystick-handle { width: 50px; height: 50px; background-color: rgba(255, 255, 255, 0.4); border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.6); position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); transition: transform 0.05s linear; }
+    #mobile-shoot-button { width: 80px; height: 80px; background: linear-gradient(135deg, #ef4444 0%, #f87171 100%); border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); color: white; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; box-shadow: 0px 4px 10px rgba(0,0,0,0.3); pointer-events: auto; cursor: pointer; }
+    #mobile-shoot-button img { width: 30px; height: 30px; margin: 0; }
+    #message, #gameOverMessage, #comboDisplay, #activePowerUpDisplay { position: absolute; background-color: rgba(0, 0, 0, 0.7); border-radius: 6px; padding: 8px 12px; color: #e0e7ff; font-size: 0.9rem; text-align: center; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); z-index: 100; max-width: 80%; white-space: pre-wrap; word-wrap: break-word; box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,0.3); opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0s 0.3s; }
+    #message.visible, #gameOverMessage.visible, #comboDisplay.visible, #activePowerUpDisplay.visible { opacity: 1; visibility: visible; transition: opacity 0.3s ease; }
+    #message { top: 45px; left: 50%; transform: translateX(-50%); border: 1px solid #6366f1; }
+    #gameOverMessage { top: 50%; left: 50%; transform: translate(-50%, -50%); border: 2px solid #dc2626; padding: 20px; font-size: 1.3rem; }
+    #gameOverMessage h2 { font-size: 1.8rem; color: #f87171; margin-bottom: 10px; }
+    #gameOverMessage p { font-size: 1.1rem; margin-bottom: 15px; }
+    #scoreDisplay, #livesDisplay { position: absolute; top: 15px; background-color: rgba(0, 0, 0, 0.65); border: 1.5px solid #3b82f6; border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 0.9rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); z-index: 10; box-sizing: border-box; }
+    #scoreDisplay { left: 15px; } #livesDisplay { right: 15px; }
+    #comboDisplay { top: 45px; left: 15px; border: 1.5px solid #f59e0b; color: #fcd34d; }
+    #activePowerUpDisplay { top: 45px; right: 15px; border: 1.5px solid #a78bfa; color: #d8b4fe; }
+    #activePowerUpDisplay img { width: 1.2em; height: 1.2em; vertical-align: middle; margin-right: 5px;}
+
+    .hidden { opacity: 0 !important; visibility: hidden !important; transition: opacity 0.3s ease, visibility 0s 0.3s !important; }
+    .visible { opacity: 1 !important; visibility: visible !important; transition: opacity 0.3s ease !important; }
+
+    .game-over-shake #gameCanvas { animation: shake 0.5s; animation-iteration-count: 2; }
+    @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+    .modal { display: none; position: fixed; z-index: 200; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); padding-top: 50px; box-sizing: border-box; }
+    .modal-content { background-color: #1a1a2e; color: #e0e7ff; margin: 5% auto; padding: 20px; border: 1px solid #f59e0b; border-radius: 10px; width: 90%; max-width: 700px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); font-family: 'Press Start 2P', cursive; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f59e0b; padding-bottom: 10px; margin-bottom: 15px; }
+    .modal-header h2 { margin: 0; font-size: 1.5rem; color: #fcd34d; }
+    .close-button { color: #fcd34d; font-size: 28px; font-weight: bold; background: none; border: none; cursor: pointer; }
+    .close-button:hover, .close-button:focus { color: #f59e0b; text-decoration: none; }
+    #missionsList { list-style: none; padding: 0; max-height: 60vh; overflow-y: auto; }
+    #missionsList li { background-color: #2a2a4e; border: 1px solid #4a4a7e; border-radius: 5px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; }
+    #missionsList li .mission-details { flex-grow: 1; }
+    #missionsList li .mission-name { font-weight: bold; color: #f5af19; display: block; margin-bottom: 4px; }
+    #missionsList li .mission-description { color: #c7d2fe; font-size: 0.7rem; margin-bottom: 4px; }
+    #missionsList li .mission-progress { font-size: 0.65rem; color: #8a98ca; }
+    #missionsList li .mission-status { font-weight: bold; padding: 5px 8px; border-radius: 5px; min-width: 80px; text-align: center; }
+    #missionsList li .mission-status.pending { background-color: #dc2626; color: #fef2f2; }
+    #missionsList li .mission-status.completed { background-color: #16a34a; color: #f0fdf4; }
+
+    #boostBarContainer { position: absolute; top: 50%; right: 15px; transform: translateY(-50%); width: 20px; height: 100px; background-color: rgba(0, 0, 0, 0.65); border: 1.5px solid #3b82f6; border-radius: 5px; overflow: hidden; z-index: 10; pointer-events: none; }
+    #boostBarFill { width: 100%; height: 0%; background-color: #60a5fa; position: absolute; bottom: 0; left: 0; transition: height 0.2s ease-out; }
+    #boostBarContainer.ready { pointer-events: auto; cursor: pointer; border: 3px solid #a5f3fc; animation: boostGlow 0.5s infinite alternate; }
+    @keyframes boostGlow { from { box-shadow: 0 0 10px #67e8f9, 0 0 15px #67e8f9, 0 0 20px #a5f3fc; } to { box-shadow: 0 0 20px #a5f3fc, 0 0 30px #a5f3fc, 0 0 40px #22d3ee; } }
+    #difficultySelectorContainer { margin-bottom: 10px; }
+    #difficultySelector { padding: 8px; font-family: 'Press Start 2P', cursive; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 5px; }
+    .menu-modal-item { margin-bottom: 15px; display: flex; justify-content: center; }
