@@ -45,9 +45,99 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
     let comboDisplayTimeoutId = null; let activePowerUpDisplayTimeoutId = null;
 
     function resetMissionStats() { missionStats = { score: 0, timeSurvivedWithoutHits: 0, timeSurvivedTotal: 0, laserKills: 0, meteorsDestroyed: 0, metallicMeteorsDestroyed: 0, cometsDestroyed_any: 0, cometsDestroyed_small: 0, cometsDestroyed_medium: 0, cometsDestroyed_large: 0, uniquePowerUpsCollected: new Set(), powerUpsActivated: { biggerBullets: 0, shield: 0, laser: 0, multishot: 0, super: 0, shockwave: 0 }, superPowerKills: 0, biggerBulletKills: 0, shipHits: 0, noPowerUpsUsedThisGame: true, }; missions.forEach(mission => { mission.isCompleted = false; mission.currentValue = 0; if (mission.statToTrack === 'uniquePowerUpsCollected') { mission.currentValue = new Set(); } }); }
-    function updateMissionProgress(statKey, value) { if (missionStats.hasOwnProperty(statKey)) { if (typeof missionStats[statKey] === 'number') { if (statKey === 'score' || statKey === 'scoreWithoutPowerups') { missionStats[statKey] = score; } else { missionStats[statKey] += value; } } else if (missionStats[statKey] instanceof Set) { missionStats[statKey].add(value); } if (typeof missionStats[statKey] === 'object' && !(missionStats[statKey] instanceof Set) && missionStats[statKey].hasOwnProperty(value)) { missionStats[statKey][value]++; } } missions.forEach(mission => { if (!mission.isCompleted && mission.statToTrack === statKey) { let currentProgressValue = 0; if (statKey === 'uniquePowerUpsCollected') { currentProgressValue = missionStats.uniquePowerUpsCollected.size; } else if (statKey === 'scoreWithoutPowerups') { if (missionStats.noPowerUpsUsedThisGame) { currentProgressValue = missionStats.score; } else { return; } } else { currentProgressValue = missionStats[statKey]; } mission.currentValue = currentProgressValue; if (mission.currentValue >= mission.targetValue) { if (!mission.isCompleted) { mission.isCompleted = true; showMessage(`¡Misión Cumplida: ${mission.name}!`, 3000); renderMissions(); } } } }); }
+function updateMissionProgress(statKey, value) {
+    if (missionStats.hasOwnProperty(statKey)) {
+        if (typeof missionStats[statKey] === 'number') {
+            if (statKey === 'score' || statKey === 'scoreWithoutPowerups') {
+                missionStats[statKey] = score;
+            } else {
+                missionStats[statKey] += value;
+            }
+        } else if (missionStats[statKey] instanceof Set) {
+            missionStats[statKey].add(value);
+        }
+        if (typeof missionStats[statKey] === 'object' && !(missionStats[statKey] instanceof Set) && missionStats[statKey].hasOwnProperty(value)) {
+            missionStats[statKey][value]++;
+        }
+    }
+    missions.forEach(mission => {
+        if (!mission.isCompleted && mission.statToTrack === statKey) {
+            let currentProgressValue = 0;
+            if (statKey === 'uniquePowerUpsCollected') {
+                currentProgressValue = missionStats.uniquePowerUpsCollected.size;
+            } else if (statKey === 'scoreWithoutPowerups') {
+                if (missionStats.noPowerUpsUsedThisGame) {
+                    currentProgressValue = missionStats.score;
+                } else {
+                    return;
+                }
+            } else {
+                currentProgressValue = missionStats[statKey];
+            }
+            mission.currentValue = currentProgressValue;
+            if (mission.currentValue >= mission.targetValue) {
+                if (!mission.isCompleted) {
+                    mission.isCompleted = true;
+                    showMessage(`¡Misión Cumplida: ${mission.name}!`, 3000);
+                    renderMissions();
+                    floatingTexts.push(new FloatingText('¡Misión Completada!', dimensions.width / 2, dimensions.height * 0.25, '#4ade80'));
+                    triggerMissionFlash(mission.id);
+                }
+            }
+        }
+    });
+}
     function checkSurvivalMissions(currentTime) { if (ship && missionStats.shipHits === 0) { missionStats.timeSurvivedWithoutHits = Math.floor((currentTime - (missionStats.gameStartTime || currentTime)) / 1000); updateMissionProgress('timeSurvivedWithoutHits', 0); } missionStats.timeSurvivedTotal = Math.floor((currentTime - (missionStats.gameStartTime || currentTime)) / 1000); }
-    function renderMissions() { missionsListEl.innerHTML = ''; missions.forEach(mission => { const li = document.createElement('li'); const detailsDiv = document.createElement('div'); detailsDiv.className = 'mission-details'; const nameSpan = document.createElement('span'); nameSpan.className = 'mission-name'; nameSpan.textContent = mission.name; detailsDiv.appendChild(nameSpan); const descSpan = document.createElement('span'); descSpan.className = 'mission-description'; descSpan.textContent = mission.description; detailsDiv.appendChild(descSpan); const progressSpan = document.createElement('span'); progressSpan.className = 'mission-progress'; let currentDisplayValue = mission.currentValue; if (mission.statToTrack === 'uniquePowerUpsCollected' && mission.currentValue instanceof Set) { currentProgressValue = mission.currentValue.size; } else if (typeof mission.currentValue === 'number') { currentDisplayValue = Math.min(mission.currentValue, mission.targetValue); } progressSpan.textContent = `Progreso: ${currentDisplayValue} / ${mission.targetValue}`; if (mission.isCompleted) { progressSpan.textContent = `Progreso: ${mission.targetValue} / ${mission.targetValue}`; } detailsDiv.appendChild(progressSpan); li.appendChild(detailsDiv); const statusSpan = document.createElement('span'); statusSpan.className = 'mission-status'; if (mission.isCompleted) { statusSpan.classList.add('completed'); statusSpan.textContent = '¡Conseguida!'; } else { statusSpan.classList.add('pending'); statusSpan.textContent = 'Pendiente'; } li.appendChild(statusSpan); missionsListEl.appendChild(li); }); }
+function renderMissions() {
+    missionsListEl.innerHTML = '';
+    missions.forEach(mission => {
+        const li = document.createElement('li');
+        li.dataset.missionId = mission.id;
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'mission-details';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'mission-name';
+        nameSpan.textContent = mission.name;
+        detailsDiv.appendChild(nameSpan);
+        const descSpan = document.createElement('span');
+        descSpan.className = 'mission-description';
+        descSpan.textContent = mission.description;
+        detailsDiv.appendChild(descSpan);
+        const progressSpan = document.createElement('span');
+        progressSpan.className = 'mission-progress';
+        let currentDisplayValue = mission.currentValue;
+        if (mission.statToTrack === 'uniquePowerUpsCollected' && mission.currentValue instanceof Set) {
+            currentProgressValue = mission.currentValue.size;
+        } else if (typeof mission.currentValue === 'number') {
+            currentDisplayValue = Math.min(mission.currentValue, mission.targetValue);
+        }
+        progressSpan.textContent = `Progreso: ${currentDisplayValue} / ${mission.targetValue}`;
+        if (mission.isCompleted) {
+            progressSpan.textContent = `Progreso: ${mission.targetValue} / ${mission.targetValue}`;
+        }
+        detailsDiv.appendChild(progressSpan);
+        li.appendChild(detailsDiv);
+        const statusSpan = document.createElement('span');
+        statusSpan.className = 'mission-status';
+        if (mission.isCompleted) {
+            statusSpan.classList.add('completed');
+            statusSpan.textContent = '¡Conseguida!';
+        } else {
+            statusSpan.classList.add('pending');
+            statusSpan.textContent = 'Pendiente';
+        }
+        li.appendChild(statusSpan);
+        missionsListEl.appendChild(li);
+    });
+}
+
+function triggerMissionFlash(missionId) {
+    const li = document.querySelector(`[data-mission-id="${missionId}"]`);
+    if (li) {
+        li.classList.add('mission-flash');
+        li.addEventListener('animationend', () => li.classList.remove('mission-flash'), { once: true });
+    }
+}
     function getDifficultyFactor() { const baseDifficultyIncrease = 0.30; const scoreThreshold = 200; const maxFactor = 5.0; let factor = 1 + (Math.floor(score / scoreThreshold) * baseDifficultyIncrease); return Math.min(factor, maxFactor); }
 
 async function initAudio() {
@@ -309,7 +399,25 @@ function updateScoreDisplay() {
 function updateLivesDisplay() {
   livesEl.textContent = `${ship ? ship.lives : 0} ❤️`;
 }
-    function updateComboDisplay() { if (comboDisplayEl) { if (comboCount > 1 && gameRunning && !paused) { comboDisplayEl.textContent = `Combo: ${comboCount}x`; comboDisplayEl.classList.add('visible'); if (comboDisplayTimeoutId) clearTimeout(comboDisplayTimeoutId); comboDisplayTimeoutId = setTimeout(() => { comboDisplayEl.classList.remove('visible'); comboDisplayTimeoutId = null; }, 1000); } else { comboDisplayEl.classList.remove('visible'); if (comboDisplayTimeoutId) { clearTimeout(comboDisplayTimeoutId); comboDisplayTimeoutId = null; } } } }
+    function updateComboDisplay() {
+        if (!comboDisplayEl) return;
+        if (comboCount > 1 && gameRunning && !paused) {
+            comboDisplayEl.textContent = ;
+            comboDisplayEl.classList.add('visible', 'combo-flash');
+            comboDisplayEl.addEventListener('animationend', () => { comboDisplayEl.classList.remove('combo-flash'); }, { once: true });
+            if (comboDisplayTimeoutId) clearTimeout(comboDisplayTimeoutId);
+            comboDisplayTimeoutId = setTimeout(() => {
+                comboDisplayEl.classList.remove('visible');
+                comboDisplayTimeoutId = null;
+            }, 1000);
+        } else {
+            comboDisplayEl.classList.remove('visible');
+            if (comboDisplayTimeoutId) {
+                clearTimeout(comboDisplayTimeoutId);
+                comboDisplayTimeoutId = null;
+            }
+        }
+    }x`; comboDisplayEl.classList.add('visible'); if (comboDisplayTimeoutId) clearTimeout(comboDisplayTimeoutId); comboDisplayTimeoutId = setTimeout(() => { comboDisplayEl.classList.remove('visible'); comboDisplayTimeoutId = null; }, 1000); } else { comboDisplayEl.classList.remove('visible'); if (comboDisplayTimeoutId) { clearTimeout(comboDisplayTimeoutId); comboDisplayTimeoutId = null; } } } }
     function updateActivePowerUpDisplay() { if (!activePowerUpDisplayEl || !ship) return; let textToShow = null; let shouldBeVisible = false; if (superPowerActive) { textToShow = `SUPER! ${Math.ceil(superPowerTimer/60)}s`; shouldBeVisible = true; } else if (currentOffensivePowerType && currentOffensivePowerType !== 'super') { textToShow = powerUpVisuals[currentOffensivePowerType].displayName; if (currentOffensivePowerType === 'multishot') textToShow += ` N${ship.multishotLevel}`; if (currentOffensivePowerType === 'laser') textToShow += ` N${ship.laserLevel}`; shouldBeVisible = true; } else if (shieldActive) { textToShow = `Escudo N${ship.shieldLevel}`; shouldBeVisible = true; } if (shouldBeVisible) { activePowerUpDisplayEl.innerHTML = textToShow; activePowerUpDisplayEl.classList.add('visible'); if (activePowerUpDisplayTimeoutId) clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = setTimeout(() => { activePowerUpDisplayEl.classList.remove('visible'); activePowerUpDisplayTimeoutId = null; }, 1000); } else { activePowerUpDisplayEl.classList.remove('visible'); if (activePowerUpDisplayTimeoutId) { clearTimeout(activePowerUpDisplayTimeoutId); activePowerUpDisplayTimeoutId = null; } } }
     function updateBoostBar(){ if(!boostBarFill || !boostBarContainer) return; const fillPercent = Math.min(100, (boostMeteorKills / boostTargetKills) * 100); boostBarFill.style.height = `${fillPercent}%`; if(boostReady){ boostBarContainer.classList.add('ready'); } else { boostBarContainer.classList.remove('ready'); } }
     function activateBoost() { if(!boostReady || boostActive || !ship) return; boostActive = true; boostTimer = boostDuration; boostReady = false; boostMeteorKills = 0; ship.invincible = true; ship.invincibilityTimer = boostDuration; targetBackgroundSpeedMultiplier = 25; playSound('boost'); updateBoostBar(); showMessage("¡VELOCIDAD MÁXIMA!", 2000); deactivateAllOffensivePowers(true); superPowerActive = true; superPowerTimer = boostDuration; currentOffensivePowerType = 'super'; playSound('superPowerActivate'); }
