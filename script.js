@@ -533,9 +533,46 @@ function updateComboDisplay() {
 
 
 
-      for (let i=bullets.length-1; i>=0; i--) {
-        let bulletConsumed = false; const b=bullets[i]; if (!b) continue;
-        if (bulletConsumed) continue;
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        let bulletConsumed = false;
+        const bulletAABB = { x: b.x - b.width / 2, y: b.y - b.height / 2, width: b.width, height: b.height };
+        for (let j = meteors.length - 1; j >= 0 && !bulletConsumed; j--) {
+          const m = meteors[j];
+          const meteorCircle = { x: m.x, y: m.y, radius: m.radius };
+          if (checkAabbCircleCollision(bulletAABB, meteorCircle)) {
+            if (m.takeHit(b)) {
+              score += m.points;
+              updateScoreDisplay();
+              floatingTexts.push(new FloatingText(`+${m.points}`, m.x, m.y));
+              explosions.push(new Explosion(m.x, m.y, { r: 200, g: 50, b: 50 }));
+              meteors.splice(j, 1);
+              boostMeteorKills++;
+            }
+            bullets.splice(i, 1);
+            bulletConsumed = true;
+          }
+        }
+        for (let j = comets.length - 1; j >= 0 && !bulletConsumed; j--) {
+          const c = comets[j];
+          const cometCircle = { x: c.x, y: c.y, radius: c.approxRadius };
+          if (checkAabbCircleCollision(bulletAABB, cometCircle)) {
+            if (c.takeHit(b)) {
+              score += c.points;
+              updateScoreDisplay();
+              floatingTexts.push(new FloatingText(`+${c.points}`, c.x, c.y));
+              explosions.push(new Explosion(c.x, c.y, { r: 255, g: 120, b: 0 }));
+              comets.splice(j, 1);
+              boostMeteorKills++;
+            }
+            bullets.splice(i, 1);
+            bulletConsumed = true;
+          }
+        }
+        if (bulletConsumed) {
+          updateBoostBar();
+          comboCount++;
+        }
       }
 
       for (let i=meteors.length-1; i>=0; i--) { const m=meteors[i]; if(!m) continue; const shipAABB={x:ship.x,y:ship.y,width:ship.size,height:ship.size}; const meteorCircle={x:m.x,y:m.y,radius:m.radius}; if (checkAabbCircleCollision(shipAABB,meteorCircle)) { ship.hit(); explosions.push(new Explosion(m.x,m.y,{r:200,g:50,b:50})); meteors.splice(i,1); if (ship.lives <= 0 && gameRunning) gameOver(); } }
