@@ -138,7 +138,14 @@ function triggerMissionFlash(missionId) {
         li.addEventListener('animationend', () => li.classList.remove('mission-flash'), { once: true });
     }
 }
-    function getDifficultyFactor() { const baseDifficultyIncrease = 0.30; const scoreThreshold = 200; const maxFactor = 5.0; let factor = 1 + (Math.floor(score / scoreThreshold) * baseDifficultyIncrease); return Math.min(factor, maxFactor); }
+    function getDifficultyFactor() {
+        const baseDifficultyIncrease = 0.30;
+        const scoreThreshold = 200;
+        const maxFactor = 5.0;
+        let factor = 1 + (Math.floor(score / scoreThreshold) * baseDifficultyIncrease);
+        factor *= difficultyMultiplier;
+        return Math.min(factor, maxFactor);
+    }
 
 async function initAudio() {
     try {
