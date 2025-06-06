@@ -136,6 +136,26 @@ async function initAudio() {
           if (this.invincible && this.invincibilityTimer > 0) { this.invincibilityTimer--; if (this.invincibilityTimer <= 0 && !boostActive) this.invincible = false; }
       }
       shoot() { if (superPowerActive) { const numSuperBullets = 5; const angleIncrement = Math.PI / 6; const baseAngle = -Math.PI / 2; for (let i = 0; i < numSuperBullets; i++) { const angle = baseAngle + (i - Math.floor(numSuperBullets / 2)) * angleIncrement; const speed = 7; const bulletX = this.x + this.size / 2; const bulletY = this.y; const color = superBulletColors[0]; bullets.push(new Bullet(bulletX, bulletY, 8, 8, speed, color, angle, 'super')); } playSound('superPowerShoot'); } else if (laserActive) { const baseAngle = -Math.PI / 2; const angleSpread = 5 * Math.PI / 180; const numLasers = Math.min(5, 1 + (this.laserLevel -1) * 2); for(let i = 0; i < numLasers; i++){ const angleOffset = (i - Math.floor((numLasers-1)/2)) * angleSpread; lasers.push(new LaserBeam(this.x + this.size/2, this.y, laserPulseDuration, baseAngle + angleOffset)); } playSound('laserShoot'); } else if (shockwaveActive) { shockwaves.push(new Shockwave(this.x + this.size / 2, this.y + this.size / 2)); playSound('shockwave'); shockwaveShotsRemaining--; if(shockwaveShotsRemaining<=0){ shockwaveActive=false; currentOffensivePowerType=null; showMessage('¡Onda Expansiva Agotada!',2000); } } else { let shots = multishotActive ? [1, 2, 3, 4, 5][this.multishotLevel -1] : 1; if (bullets.length + shots > (multishotActive ? 12 : 8) ) return; let bulletColor = '#f59e0b'; let bulletType = 'normal'; if (biggerBulletsActive) { bulletColor = powerUpVisuals.biggerBullets.bulletColor; bulletType = 'bigger';} else if (multishotActive) { bulletColor = powerUpVisuals.multishot.bulletColor; } for (let i = 0; i < shots; i++) { const bulletWidth = biggerBulletsActive ? 12 : 5; const bulletHeight = biggerBulletsActive ? 22 : 12; const spacing = bulletWidth * 2.5; const xOffset = (i - (shots - 1) / 2) * spacing; const bulletX = this.x + this.size/2 - bulletWidth/2 + xOffset; const bulletY = this.y - bulletHeight; bullets.push(new Bullet(bulletX, bulletY, bulletWidth, bulletHeight, 10, bulletColor, -Math.PI / 2, bulletType)); } playSound('shoot'); } }
+
+      hit() {
+          if (this.invincible) return;
+          if (shieldActive) {
+              this.shieldLevel--;
+              if (this.shieldLevel <= 0) {
+                  shieldActive = false;
+                  shieldBreakParticles.push(new ShieldShards(this.x + this.size / 2, this.y + this.size / 2, 10, this.size));
+                  playSound('shieldBreak');
+              } else {
+                  playSound('hit');
+              }
+              return;
+          }
+          this.lives--;
+          updateLivesDisplay();
+          this.invincible = true;
+          this.invincibilityTimer = this.invincibilityDuration;
+          playSound('hit');
+      }
       loseAllLives() { this.lives = 0; updateLivesDisplay(); gameOver(); }
     }
 
@@ -408,7 +428,7 @@ function updateComboDisplay() {
         activePowerUpDisplayEl.classList.remove('hidden');
         pauseBtn.classList.remove('hidden');
         startBtn.classList.add('hidden');
-        if (!isMouseControlsActive && ('ontouchstart' in window || navigator.maxTouchPoints)) {
+        if (!isMouseControlsActive && navigator.maxTouchPoints > 0) {
             if (mobileControlsContainer) mobileControlsContainer.style.display = 'flex';
         } else {
             if (mobileControlsContainer) mobileControlsContainer.style.display = 'none';
@@ -591,7 +611,7 @@ function updateComboDisplay() {
 
     window.onload = function(){
       updateDimensions(); showMessage("¡Presiona Empezar!");
-      isMouseControlsActive = !('ontouchstart' in window || navigator.maxTouchPoints > 0);
+      isMouseControlsActive = navigator.maxTouchPoints === 0;
       if (isMouseControlsActive) { console.log("Controles de Ratón ACTIVADOS"); if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; canvas.addEventListener('mousemove', e => { if (!gameRunning || paused || !ship) return; const rect = canvas.getBoundingClientRect(); mousePos.x = e.clientX - rect.left; mousePos.y = e.clientY - rect.top; }); document.addEventListener('click', handleGlobalClickForShoot); }
       else { console.log("Controles Táctiles (Joystick) ACTIVADOS"); if(mobileControlsContainer) mobileControlsContainer.style.display = 'flex'; if(joystickArea) { joystickArea.addEventListener('touchstart', handleJoystickStart, { passive: false }); joystickArea.addEventListener('touchmove', handleJoystickMove, { passive: false }); joystickArea.addEventListener('touchend', handleJoystickEnd); joystickArea.addEventListener('touchcancel', handleJoystickEnd); } if(mobileShootButton) { mobileShootButton.addEventListener('touchstart', (e) => { e.preventDefault(); if (gameRunning && !paused && ship) ship.shoot(); }, { passive: false }); } }
       initAudio().catch(err => console.warn("Initial audio setup prompt might be needed or failed:", err));
