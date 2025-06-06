@@ -12,7 +12,6 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
     const closeMissionsModalBtn = document.getElementById('closeMissionsModal'); const missionsListEl = document.getElementById('missionsList');
     const boostBarContainer = document.getElementById('boostBarContainer'); const boostBarFill = document.getElementById('boostBarFill');
     const comboDisplayEl = document.getElementById('comboDisplay'); const activePowerUpDisplayEl = document.getElementById('activePowerUpDisplay');
-    const difficultySelector = document.getElementById('difficultySelector');
     const menuButton = document.getElementById('menuButton');
     const menuModal = document.getElementById('menuModal');
     const closeMenuModalBtn = document.getElementById('closeMenuModal');
@@ -33,7 +32,7 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
     let superPowerActive = false, superPowerTimer = 0; const superPowerDuration = 10 * 60;
     let boostMeteorKills = 0; const boostTargetKills = 70; let boostReady = false; let boostActive = false; let boostTimer = 0; const boostDuration = 10 * 60; let originalShipSpeed = 7;
     let backgroundParticleSpeedMultiplier = 1; let targetBackgroundSpeedMultiplier = 1; const backgroundSpeedEasing = 0.05;
-    let comboCount = 0; let difficultyMultiplier = parseFloat(difficultySelector.value);
+    let comboCount = 0; let difficultyMultiplier = 1;
     const superBulletColors = ['#B19CD9'];
     const powerUpVisuals = { biggerBullets: { itemColor: '#22c55e', borderColor: '#a7f3d0', bulletColor: '#22c55e', displayName: "Balas Grandes" }, shield: { itemColor: '#0ea5e9', borderColor: '#bae6fd', bulletColor: null, displayName: "Escudo" }, laser: { itemColor: '#ef4444', borderColor: '#fca5a5', bulletColor: '#ef4444', displayName: "Rayo Láser" }, multishot: { itemColor: '#FFA500', borderColor: '#fed8b1', bulletColor: '#FFA500', displayName: "Multidisparo" }, shockwave: { itemColor: '#C0C0C0', borderColor: '#FFFFFF', bulletColor: null, displayName: "Onda Expansiva" }, super: { itemColor: '#FFD700', borderColor: '#FFFACD', bulletColor: null, displayName: "SUPER PODER"} };
     let synth, explosionSynth, gameOverSynth, hitSynth, powerUpSynth, metallicHitSynth, superPowerSynth, shieldBreakSynth; let laserShootSynth, shockwaveSynth, superPowerPickupSynth, boostSynth;
@@ -501,7 +500,6 @@ function updateComboDisplay() {
         activePowerUpDisplayEl.classList.remove('hidden');
         pauseBtn.classList.remove('hidden');
         startBtn.classList.add('hidden');
-        difficultySelector.disabled = true;
         if (!isMouseControlsActive && ('ontouchstart' in window || navigator.maxTouchPoints)) {
             if (mobileControlsContainer) mobileControlsContainer.style.display = 'flex';
         } else {
@@ -570,7 +568,7 @@ function updateComboDisplay() {
     }
     function pauseGame() { if (!gameRunning) return; paused = !paused; if (paused) { showMessage("Juego Pausado"); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/play.svg" alt="[Icono de Reanudar]"/> <span>Reanudar</span>`; if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } } else { hideMessage(); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`; let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (!gameFrameId) gameLoop(); } }
     function toggleMute() { initAudio().then(() => { muted = !muted; Tone.Master.mute = muted; muteIcon.src = muted ? "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-x.svg" : "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-2.svg"; muteText.textContent = muted ? "Sonido OFF" : "Sonido ON"; if (!muted && ship) playSound('shoot'); }).catch(err => { console.error("Failed to toggle mute (audio init issue):", err); showMessage("Error de audio. Intenta recargar.",2000); }); }
-    function gameOver() { gameRunning=false; paused=true; playSound('gameOver'); if (score > highScore) { highScore = score; localStorage.setItem('highScore', highScore); } highScoreEl.textContent = highScore; finalEl.textContent = score; overMsg.classList.add('visible'); scoreEl.classList.add('hidden'); livesEl.classList.add('hidden'); comboDisplayEl.classList.add('hidden'); activePowerUpDisplayEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); startBtn.classList.remove('hidden'); difficultySelector.disabled = false; startBtn.querySelector('span').textContent = "Reintentar"; if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; container.classList.add('game-over-shake'); setTimeout(()=>container.classList.remove('game-over-shake'),1000); if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } hideMessage(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostActive = false; boostTimer = 0; if(ship) ship.speed = originalShipSpeed; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
+    function gameOver() { gameRunning=false; paused=true; playSound('gameOver'); if (score > highScore) { highScore = score; localStorage.setItem('highScore', highScore); } highScoreEl.textContent = highScore; finalEl.textContent = score; overMsg.classList.add('visible'); scoreEl.classList.add('hidden'); livesEl.classList.add('hidden'); comboDisplayEl.classList.add('hidden'); activePowerUpDisplayEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); startBtn.classList.remove('hidden');  startBtn.querySelector('span').textContent = "Reintentar"; if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; container.classList.add('game-over-shake'); setTimeout(()=>container.classList.remove('game-over-shake'),1000); if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } hideMessage(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostActive = false; boostTimer = 0; if(ship) ship.speed = originalShipSpeed; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
 
     function updateGame() {
       if (!ship || paused || !gameRunning) return;
@@ -686,11 +684,6 @@ function updateComboDisplay() {
     if(pauseBtn) pauseBtn.addEventListener('click', pauseGame);
     if(muteBtn) muteBtn.addEventListener('click', toggleMute);
     if(newBtn) newBtn.addEventListener('click', startGame);
-    if(difficultySelector) {
-        difficultySelector.addEventListener('change', (e) => {
-            difficultyMultiplier = parseFloat(e.target.value);
-        });
-    }
     if(missionsButton) { missionsButton.addEventListener('click', () => { missionsModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
     if(closeMissionsModalBtn) { closeMissionsModalBtn.addEventListener('click', () => { missionsModal.style.display = 'none'; }); }
     if(menuButton) { menuButton.addEventListener('click', () => { menuModal.style.display = 'block'; if(gameRunning && !paused) pauseGame(); }); }
