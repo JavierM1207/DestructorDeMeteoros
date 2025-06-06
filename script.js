@@ -502,14 +502,12 @@ function updateComboDisplay() {
       if (!ship || paused || !gameRunning) return;
       gameFrameCounter++;
 
-      if (!isMouseControlsActive) {
-          if (!joystickActive) {
-              ship.targetVelX = 0; ship.targetVelY = 0;
-              if (keys['ArrowLeft'] || keys['KeyA']) ship.targetVelX = -ship.speed;
-              if (keys['ArrowRight'] || keys['KeyD']) ship.targetVelX = ship.speed;
-              if (keys['ArrowUp'] || keys['KeyW']) ship.targetVelY = -ship.speed;
-              if (keys['ArrowDown'] || keys['KeyS']) ship.targetVelY = ship.speed;
-          }
+      if (!joystickActive) {
+          ship.targetVelX = 0; ship.targetVelY = 0;
+          if (keys['ArrowLeft'] || keys['KeyA']) ship.targetVelX = -ship.speed;
+          if (keys['ArrowRight'] || keys['KeyD']) ship.targetVelX = ship.speed;
+          if (keys['ArrowUp'] || keys['KeyW']) ship.targetVelY = -ship.speed;
+          if (keys['ArrowDown'] || keys['KeyS']) ship.targetVelY = ship.speed;
       }
 
       backgroundParticleSpeedMultiplier += (targetBackgroundSpeedMultiplier - backgroundParticleSpeedMultiplier) * backgroundSpeedEasing;
