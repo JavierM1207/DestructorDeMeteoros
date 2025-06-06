@@ -18,7 +18,7 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
 
     let dimensions = { width: 0, height: 0 };
     let ship, bullets = [], meteors = [], powerUps = [], explosions = [], lasers = [], comets = [], shieldBreakParticles = [], backgroundParticlesLayer1 = [], backgroundParticlesLayer2 = [], debrisParticles = [], lifePowerUps = [], shockwaves = [], floatingTexts = [], thrusterParticles = [];
-    let score = 0, highScore = 0, gameRunning = false, paused = false, muted = false;
+    let puntos = 0, highScore = 0, gameRunning = false, paused = false, muted = false;
     let meteorIntervalId, gameFrameId = null, powerUpIntervalId; let keys = {}; let initialShipLives = 3;
     let mousePos = { x: 0, y: 0 }; let isMouseControlsActive = false;
     let joystickActive = false; let joystickStartX = 0; let joystickStartY = 0; let joystickHandleRadius = 25; let joystickAreaRadius = 50; const joystickDeadZone = joystickAreaRadius * 0.15;
@@ -44,7 +44,7 @@ const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getCont
         const baseDifficultyIncrease = 0.30;
         const scoreThreshold = 200;
         const maxFactor = 5.0;
-        let factor = 1 + (Math.floor(score / scoreThreshold) * baseDifficultyIncrease);
+        let factor = 1 + (Math.floor(puntos / scoreThreshold) * baseDifficultyIncrease);
         factor *= difficultyMultiplier;
         return Math.min(factor, maxFactor);
     }
@@ -333,7 +333,7 @@ function hideMessage() {
   messageEl.classList.remove('visible');
 }
 function updateScoreDisplay() {
-  scoreEl.textContent = score;
+  scoreEl.textContent = puntos;
 }
 function updateLivesDisplay() {
   livesEl.textContent = `${ship ? ship.lives : 0} ❤️`;
@@ -366,7 +366,7 @@ function updateComboDisplay() {
     function activateBoost() { if(!boostReady || boostActive || !ship) return; boostActive = true; boostTimer = boostDuration; boostReady = false; boostMeteorKills = 0; ship.invincible = true; ship.invincibilityTimer = boostDuration; targetBackgroundSpeedMultiplier = 25; playSound('boost'); updateBoostBar(); showMessage("¡VELOCIDAD MÁXIMA!", 2000); deactivateAllOffensivePowers(true); superPowerActive = true; superPowerTimer = boostDuration; currentOffensivePowerType = 'super'; playSound('superPowerActivate'); }
 
     function resetGame() {
-        score = 0;
+        puntos = 0;
         bullets = [];
         meteors = [];
         powerUps = [];
@@ -456,7 +456,7 @@ function updateComboDisplay() {
                 if (meteorIntervalId) clearInterval(meteorIntervalId);
                 meteorIntervalId = setInterval(
                     spawnMeteor,
-                    (meteorIntervalBase / difficultyMultiplier) - Math.min(1200, score / 1.5)
+                    (meteorIntervalBase / difficultyMultiplier) - Math.min(1200, puntos / 1.5)
                 );
                 startPowerUpSpawner();
                 if (gameFrameId) {
@@ -484,7 +484,7 @@ function updateComboDisplay() {
                 if (meteorIntervalId) clearInterval(meteorIntervalId);
                 meteorIntervalId = setInterval(
                     spawnMeteor,
-                    (meteorIntervalBase / difficultyMultiplier) - Math.min(1200, score / 1.5)
+                    (meteorIntervalBase / difficultyMultiplier) - Math.min(1200, puntos / 1.5)
                 );
                 startPowerUpSpawner();
                 if (gameFrameId) {
@@ -494,9 +494,9 @@ function updateComboDisplay() {
                 gameLoop();
             });
     }
-    function pauseGame() { if (!gameRunning) return; paused = !paused; if (paused) { showMessage("Juego Pausado"); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/play.svg" alt="[Icono de Reanudar]"/> <span>Reanudar</span>`; if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } } else { hideMessage(); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`; let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,score/1.5)); startPowerUpSpawner(); if (!gameFrameId) gameLoop(); } }
+    function pauseGame() { if (!gameRunning) return; paused = !paused; if (paused) { showMessage("Juego Pausado"); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/play.svg" alt="[Icono de Reanudar]"/> <span>Reanudar</span>`; if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } } else { hideMessage(); pauseBtn.innerHTML = `<img src="https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/pause.svg" alt="[Icono de Pausa]"/> <span>Pausa</span>`; let meteorIntervalBase = 1500; if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (meteorIntervalBase / difficultyMultiplier) - Math.min(1200,puntos/1.5)); startPowerUpSpawner(); if (!gameFrameId) gameLoop(); } }
     function toggleMute() { initAudio().then(() => { muted = !muted; Tone.Master.mute = muted; muteIcon.src = muted ? "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-x.svg" : "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/volume-2.svg"; muteText.textContent = muted ? "Sonido OFF" : "Sonido ON"; if (!muted && ship) playSound('shoot'); }).catch(err => { console.error("Failed to toggle mute (audio init issue):", err); showMessage("Error de audio. Intenta recargar.",2000); }); }
-    function gameOver() { gameRunning=false; paused=true; playSound('gameOver'); if (score > highScore) { highScore = score; localStorage.setItem('highScore', highScore); } highScoreEl.textContent = highScore; finalEl.textContent = score; overMsg.classList.add('visible'); scoreEl.classList.add('hidden'); livesEl.classList.add('hidden'); comboDisplayEl.classList.add('hidden'); activePowerUpDisplayEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); startBtn.classList.remove('hidden');  startBtn.querySelector('span').textContent = "Reintentar"; if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; container.classList.add('game-over-shake'); setTimeout(()=>container.classList.remove('game-over-shake'),1000); if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } hideMessage(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; if (ship) ship.multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostActive = false; boostTimer = 0; if(ship) ship.speed = originalShipSpeed; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
+    function gameOver() { gameRunning=false; paused=true; playSound('gameOver'); if (puntos > highScore) { highScore = puntos; localStorage.setItem('highScore', highScore); } highScoreEl.textContent = highScore; finalEl.textContent = puntos; overMsg.classList.add('visible'); scoreEl.classList.add('hidden'); livesEl.classList.add('hidden'); comboDisplayEl.classList.add('hidden'); activePowerUpDisplayEl.classList.add('hidden'); pauseBtn.classList.add('hidden'); startBtn.classList.remove('hidden');  startBtn.querySelector('span').textContent = "Reintentar"; if(mobileControlsContainer) mobileControlsContainer.style.display = 'none'; container.classList.add('game-over-shake'); setTimeout(()=>container.classList.remove('game-over-shake'),1000); if (meteorIntervalId) clearInterval(meteorIntervalId); stopPowerUpSpawner(); if (gameFrameId) { cancelAnimationFrame(gameFrameId); gameFrameId = null; } hideMessage(); deactivateAllOffensivePowers(true); if (shieldActive) { shieldActive = false; ship.shieldLevel = 0;} superPowerActive = false; superPowerTimer = 0; currentOffensivePowerType = null; multishotActive = false; if (ship) ship.multishotLevel = 1; shockwaveActive = false; laserActive = false; ship.laserLevel = 1; boostActive = false; boostTimer = 0; if(ship) ship.speed = originalShipSpeed; backgroundParticleSpeedMultiplier = 1; targetBackgroundSpeedMultiplier = 1; lasers=[]; comets = []; shieldBreakParticles = []; backgroundParticlesLayer1 = []; backgroundParticlesLayer2 = []; debrisParticles = []; lifePowerUps = []; shockwaves = []; isGiantCometScheduled = false; giantCometSpawnFrame = -1; giantCometParams = null; }
 
     function updateGame() {
       if (!ship || paused || !gameRunning) return;
@@ -509,6 +509,8 @@ function updateComboDisplay() {
           if (keys['ArrowUp'] || keys['KeyW']) ship.targetVelY = -ship.speed;
           if (keys['ArrowDown'] || keys['KeyS']) ship.targetVelY = ship.speed;
       }
+      // Corregido: actualizar la nave con la velocidad calculada
+      if (ship) ship.update();
 
       backgroundParticleSpeedMultiplier += (targetBackgroundSpeedMultiplier - backgroundParticleSpeedMultiplier) * backgroundSpeedEasing;
       framesSinceLastBgParticle++; if (framesSinceLastBgParticle >= BG_PARTICLE_SPAWN_INTERVAL) { if (backgroundParticlesLayer1.length + backgroundParticlesLayer2.length < MAX_BG_PARTICLES) { Math.random() < 0.6 ? backgroundParticlesLayer1.push(new BackgroundParticle(1)) : backgroundParticlesLayer2.push(new BackgroundParticle(2));} framesSinceLastBgParticle = 0; }
@@ -540,7 +542,7 @@ function updateComboDisplay() {
           const meteorCircle = { x: m.x, y: m.y, radius: m.radius };
           if (checkAabbCircleCollision(bulletAABB, meteorCircle)) {
             if (m.takeHit(b)) {
-              score += m.points;
+              puntos += m.points;
               updateScoreDisplay();
               floatingTexts.push(new FloatingText(`+${m.points}`, m.x, m.y));
               explosions.push(new Explosion(m.x, m.y, { r: 200, g: 50, b: 50 }));
@@ -556,7 +558,7 @@ function updateComboDisplay() {
           const cometCircle = { x: c.x, y: c.y, radius: c.approxRadius };
           if (checkAabbCircleCollision(bulletAABB, cometCircle)) {
             if (c.takeHit(b)) {
-              score += c.points;
+              puntos += c.points;
               updateScoreDisplay();
               floatingTexts.push(new FloatingText(`+${c.points}`, c.x, c.y));
               explosions.push(new Explosion(c.x, c.y, { r: 255, g: 120, b: 0 }));
@@ -621,7 +623,7 @@ function updateComboDisplay() {
       for (let i=lifePowerUps.length-1; i>=0; i--) { const lp=lifePowerUps[i]; if(!lp) continue; const shipAABB={x:ship.x,y:ship.y,width:ship.size,height:ship.size}; const lifeCircle={x:lp.x,y:lp.y,radius:lp.radius}; if (checkAabbCircleCollision(shipAABB,lifeCircle)) { if(ship) ship.lives++; updateLivesDisplay(); playSound('lifeUp'); lifePowerUps.splice(i,1); showMessage("¡Vida Extra!", 1500); } }
 
       if (superPowerActive && --superPowerTimer <=0) { superPowerActive = false; currentOffensivePowerType = null; if (ship) ship.multishotLevel = 1; multishotActive = false; showMessage("Super Poder Agotado", 2000); }
-      if (boostActive && --boostTimer <= 0) { boostActive = false; if(ship) { ship.speed = originalShipSpeed; ship.invincible = false; ship.invincibilityTimer = 0; } targetBackgroundSpeedMultiplier = 1; superPowerActive = false; superPowerTimer = 0; if(currentOffensivePowerType === 'super') currentOffensivePowerType = null; showMessage("Velocidad Normal", 1500); if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (1500 / difficultyMultiplier) - Math.min(1200, score / 1.5)); }
+      if (boostActive && --boostTimer <= 0) { boostActive = false; if(ship) { ship.speed = originalShipSpeed; ship.invincible = false; ship.invincibilityTimer = 0; } targetBackgroundSpeedMultiplier = 1; superPowerActive = false; superPowerTimer = 0; if(currentOffensivePowerType === 'super') currentOffensivePowerType = null; showMessage("Velocidad Normal", 1500); if (meteorIntervalId) clearInterval(meteorIntervalId); meteorIntervalId = setInterval(spawnMeteor, (1500 / difficultyMultiplier) - Math.min(1200, puntos / 1.5)); }
       if (!boostReady && boostMeteorKills >= boostTargetKills) { boostReady = true; updateBoostBar(); showMessage("¡Velocidad Lista!", 2000); }
     }
 
